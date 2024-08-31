@@ -1,18 +1,30 @@
 import { Request, Response, NextFunction } from 'express';
+import { NotFoundError, ValidationError } from '../customErrors';
 
-const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error(err);
-
-  const status = err.status || 500;
-  const message = err.message || 'Internal Server Error';
-
-  res.status(status).json({
-    type: 'about:blank',
-    title: message,
-    status,
-    detail: err.stack,
-    instance: req.originalUrl
-  });
+export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof NotFoundError) {
+    res.status(404).json({
+      type: 'about:blank',
+      title: 'Not Found',
+      status: 404,
+      detail: `The ${err.entityName} with ID ${err.entityId} was not found.`,
+      instance: req.originalUrl
+    });
+  } else if (err instanceof ValidationError) {
+    res.status(400).json({
+      type: 'about:blank',
+      title: 'Validation Error',
+      status: 400,
+      detail: err.detail,
+      instance: req.originalUrl
+    });
+  } else if (err instanceof Error) {
+    res.status(500).json({
+      type: 'about:blank',
+      title: 'Internal Server Error',
+      status: 500,
+      detail: 'An unexpected error occurred.',
+      instance: req.originalUrl
+    });
+  }
 };
-
-export default errorHandler;

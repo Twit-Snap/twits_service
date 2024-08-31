@@ -3,4 +3,6 @@ export type SnapResponse = {
   message: string;
 }
 
-export type CreateSnapBody = Omit<SnapResponse, 'id'>;
+export type CreateSnapBody = {
+  message: string;
+}

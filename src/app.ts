@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import snapRoutes from './routes/snapRoutes';
-import errorHandler from './middleware/errorHandler';
+import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
 
