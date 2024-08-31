@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import snapRoutes from './routes/snapRoutes';
+import errorHandler from './middleware/errorHandler';
 
 dotenv.config();
 
@@ -17,5 +18,7 @@ mongoose.connect(process.env.MONGODB_URI as string)
 // Routes
 app.use('/snaps', snapRoutes);
 
+// Error handling middleware
+app.use(errorHandler);
 
 export default app;
