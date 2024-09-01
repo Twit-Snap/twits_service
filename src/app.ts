@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import snapRoutes from './routes/snapRoutes';
 import { errorHandler } from './middleware/errorHandler';
+import logger from './utils/logger';
 
 dotenv.config();
 
@@ -13,8 +14,8 @@ app.use(express.json());
 // Connect to MongoDB
 mongoose
   .connect(process.env.MONGODB_URI as string)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+  .then(() => logger.info('Connected to MongoDB'))
+  .catch(err => logger.error('MongoDB connection error:', err));
 
 // Routes
 app.use('/snaps', snapRoutes);

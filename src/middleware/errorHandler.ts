@@ -1,8 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { NotFoundError, ValidationError } from '../customErrors';
+import logger from '../utils/logger';
 
 export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof NotFoundError) {
+    logger.warn(`NotFoundError: ${err.message}`, {
+      entityName: err.entityName,
+      entityId: err.entityId
+    });
     res.status(404).json({
       type: 'about:blank',
       title: `${err.entityName} Not Found`,
@@ -11,6 +16,7 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
       instance: req.originalUrl
     });
   } else if (err instanceof ValidationError) {
+    logger.warn(`ValidationError: ${err.message}`, { field: err.field, detail: err.detail });
     res.status(400).json({
       type: 'about:blank',
       title: 'Validation Error',
@@ -20,6 +26,7 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
       'custom-field': err.field
     });
   } else if (err instanceof Error) {
+    logger.error(`Unexpected error: ${err.message}`, { stack: err.stack });
     res.status(500).json({
       type: 'about:blank',
       title: 'Internal Server Error',
