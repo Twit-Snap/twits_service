@@ -15,7 +15,7 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
       type: 'about:blank',
       title: 'Validation Error',
       status: 400,
-      detail: err.detail,
+    detail: err.detail,
       instance: req.originalUrl,
       'custom-field': err.field
     });

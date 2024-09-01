@@ -17,7 +17,7 @@ export class ValidationError extends Error {
   constructor(field: string, detail: string) {
     super(`Validation error: ${field}`);
     this.field = field;
-    this.detail = detail;
+  this.detail = detail;
     this.name = 'ValidationError';
   }
 }
