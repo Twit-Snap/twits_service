@@ -5,7 +5,11 @@ import { ValidationError } from '../customErrors';
 
 const snapRepository: ISnapRepository = new SnapRepository();
 
-export const createSnap = async (req: Request<{}, {}, CreateSnapBody>, res: Response, next: NextFunction) => {
+export const createSnap = async (
+  req: Request<{}, {}, CreateSnapBody>,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { message } = req.body;
     if (message.length > 280) {
@@ -27,7 +31,11 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-export const getSnapById = async (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
+export const getSnapById = async (
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     const snap: SnapResponse = await snapRepository.findById(id);
@@ -37,7 +45,11 @@ export const getSnapById = async (req: Request<{ id: string }>, res: Response, n
   }
 };
 
-export const deleteSnapById = async (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
+export const deleteSnapById = async (
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
     await snapRepository.deleteById(id);
@@ -46,4 +58,3 @@ export const deleteSnapById = async (req: Request<{ id: string }>, res: Response
     next(error);
   }
 };
-

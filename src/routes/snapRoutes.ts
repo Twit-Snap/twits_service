@@ -1,5 +1,10 @@
 import express from 'express';
-import { createSnap, deleteSnapById, getAllSnaps, getSnapById } from '../controllers/snapController';
+import {
+  createSnap,
+  deleteSnapById,
+  getAllSnaps,
+  getSnapById
+} from '../controllers/snapController';
 
 const router = express.Router();
 

@@ -2,7 +2,10 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "prepare": "husky install"
   },
   "name": "ingsw2_tp_individual",
   "version": "1.0.0",
@@ -22,8 +25,14 @@
     "@types/mongoose": "^5.11.97",
     "@types/node": "^22.5.1",
     "@types/uuid": "^10.0.0",
+    "husky": "^8.0.0",
+    "lint-staged": "^15.2.10",
     "nodemon": "^3.1.4",
+    "prettier": "^3.3.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
+  },
+  "lint-staged": {
+    "*.ts": "prettier --write"
   }
 }

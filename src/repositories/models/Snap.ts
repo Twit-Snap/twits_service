@@ -6,9 +6,12 @@ export interface ISnapModel extends Document {
   message: string;
 }
 
-const SnapSchema: Schema = new Schema({
-  _id: { type: String, default: UUID.generate },
-  message: { type: String, required: true },
-}, { timestamps: true });
+const SnapSchema: Schema = new Schema(
+  {
+    _id: { type: String, default: UUID.generate },
+    message: { type: String, required: true }
+  },
+  { timestamps: true }
+);
 
 export default mongoose.model<ISnapModel>('Snap', SnapSchema);

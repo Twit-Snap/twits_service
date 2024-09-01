@@ -4,9 +4,9 @@ export class NotFoundError extends Error {
 
   constructor(entityName: string, entityId: string) {
     super(`${entityName} not found`);
-    this.entityName = entityName;
+this.entityName = entityName;
     this.entityId = entityId;
-    this.name = 'NotFoundError';
+  this.name = 'NotFoundError';
   }
 }
 

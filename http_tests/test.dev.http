@@ -6,11 +6,11 @@ curl -X GET http://localhost:8080/snaps
 ### invalid uuid
 curl -X GET http://localhost:8080/snaps/e0462215-9238-4919-a4e0-0be725d7ea7
 
+### uuid not found
+curl -X GET http://localhost:8080/snaps/e0462215-9238-4919-a4e0-0be725d7ea7e
 ### existent uuid
 curl -X GET http://localhost:8080/snaps/e0462215-9238-4919-a4e0-0be725d7ed57
-### uuid not found
 
-curl -X GET http://localhost:8080/snaps/e0462215-9238-4919-a4e0-0be725d7ea7e
 
 # create snap
 
@@ -18,5 +18,18 @@ curl -X GET http://localhost:8080/snaps/e0462215-9238-4919-a4e0-0be725d7ea7e
 curl -X POST http://localhost:8080/snaps \
      -H "Content-Type: application/json" \
      -d '{
-           "message": "Hello, World!"
+           "message": "hello world"
          }'
+
+
+
+# delete snap
+
+### invalid uuid
+curl -X DELETE http://localhost:8080/snaps/e0462215-9238-4919-a4e0-0be725d7ea7
+
+### uuid not found
+curl -X DELETE http://localhost:8080/snaps/e0462215-9238-4919-a4e0-0be725d7ea7e
+
+### existent uuid
+curl -X DELETE http://localhost:8080/snaps/d3c677d6-8138-447c-9bc9-b7151cf036ff

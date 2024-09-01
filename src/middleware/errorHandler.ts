@@ -5,7 +5,7 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
   if (err instanceof NotFoundError) {
     res.status(404).json({
       type: 'about:blank',
-      title: 'Not Found',
+      title: `${err.entityName} Not Found`,
       status: 404,
       detail: `The ${err.entityName} with ID ${err.entityId} was not found.`,
       instance: req.originalUrl
@@ -16,15 +16,16 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
       title: 'Validation Error',
       status: 400,
       detail: err.detail,
-      instance: req.originalUrl
+      instance: req.originalUrl,
+      'custom-field': err.field
     });
   } else if (err instanceof Error) {
     res.status(500).json({
       type: 'about:blank',
       title: 'Internal Server Error',
-      status: 500,
-      detail: 'An unexpected error occurred.',
-      instance: req.originalUrl
+    status: 500,
+  detail: 'An unexpected error occurred.',
+instance: req.originalUrl
     });
   }
 };
