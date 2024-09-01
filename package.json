@@ -4,8 +4,7 @@
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "format": "prettier --write \"src/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\"",
-    "prepare": "husky install"
+    "lint": "eslint . --ext .ts"
   },
   "name": "ingsw2_tp_individual",
   "version": "1.0.0",
@@ -25,17 +24,17 @@
     "@types/mongoose": "^5.11.97",
     "@types/node": "^22.5.1",
     "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.56.0",
     "husky": "^8.0.0",
-    "lint-staged": "^15.2.10",
+    "lint-staged": "^15.2.0",
     "nodemon": "^3.1.4",
     "prettier": "^3.3.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
   },
   "lint-staged": {
-    "*.{ts,js}": "eslint --cache --fix",
-    "*.{ts,js,md}": "prettier --write",
-    "*.js": "eslint --cache --fix",
-    "*.{js,md}": "prettier --write"
+    "*.ts": "prettier --write"
   }
 }
