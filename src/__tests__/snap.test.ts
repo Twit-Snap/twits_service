@@ -54,4 +54,58 @@ describe('Snap API Tests', () => {
       expect(snap.message).toBe('Test snap');
     });
   });
+
+  describe('GET /snaps/:id', () => {
+    it('should return a snap when given a valid ID', async () => {
+      const createdSnap = await Snap.create({ message: 'Test snap' });
+
+      const response = await request(app).get(`/snaps/${createdSnap.id}`);
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.id).toBe(createdSnap.id);
+      expect(response.body.data.message).toBe('Test snap');
+    });
+
+    it('should return 404 when given a non-existent ID', async () => {
+      const nonExistentId = 'e0462215-9238-4919-a4e0-0be725d7ed57';
+
+      const response = await request(app).get(`/snaps/${nonExistentId}`);
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        detail: 'The Snap with ID e0462215-9238-4919-a4e0-0be725d7ed57 was not found.',
+        instance: '/snaps/e0462215-9238-4919-a4e0-0be725d7ed57',
+        status: 404,
+        title: 'Snap Not Found',
+        type: 'about:blank'
+      });
+    });
+
+    it('should return 400 when given an invalid ID format', async () => {
+      const invalidId = 'invalid-id-format';
+
+      const response = await request(app).get(`/snaps/${invalidId}`);
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        'custom-field': 'id',
+        detail: 'Invalid UUID',
+        instance: '/snaps/invalid-id-format',
+        status: 400,
+        title: 'Validation Error',
+        type: 'about:blank'
+      });
+    });
+
+    it('should return snap with correct structure', async () => {
+      const createdSnap = await Snap.create({ message: 'Detailed snap' });
+
+      const response = await request(app).get(`/snaps/${createdSnap.id}`);
+      expect(response.status).toBe(200);
+
+      const snap = response.body.data;
+      expect(snap.id).toBeDefined();
+      expect(typeof snap.id).toBe('string');
+      expect(UUID.isValid(snap.id)).toBe(true);
+      expect(snap.message).toBe('Detailed snap');
+    });
+  });
 });
