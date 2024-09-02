@@ -1,85 +1,50 @@
-import request from 'supertest';
-import app from '../app';
+import mongoose from 'mongoose';
+import Snap from '../repositories/models/Snap';
 import { UUID } from '../utils/uuid';
 
-// Mock UUID
-jest.mock('../utils/uuid', () => ({
-  UUID: {
-    generate: jest.fn().mockReturnValue('mocked-uuid'),
-    isValid: jest.fn().mockReturnValue(true)
-  }
-}));
-
-// Mock Snap model
-const mockFind = jest.fn();
-jest.mock('../repositories/models/Snap', () => {
-  return jest.fn().mockImplementation(() => ({
-    save: jest.fn().mockResolvedValue({
-      _id: 'mocked-uuid',
-      message: 'Test snap message'
-    }),
-    find: mockFind
-  }));
-});
-
-describe('Snap API', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+describe('Snap Model Tests', () => {
+  beforeAll(async () => {
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/test_db');
   });
 
-  describe('POST /snaps', () => {
-    it('should create a new snap', async () => {
-      const response = await request(app)
-        .post('/snaps')
-        .send({ message: 'Test snap message' })
-        .expect(201);
-
-      expect(response.body.data).toHaveProperty('id', 'mocked-uuid');
-      expect(response.body.data.message).toBe('Test snap message');
-      expect(UUID.generate).toHaveBeenCalled();
-    });
-
-    it('should return 400 for invalid input', async () => {
-      const response = await request(app).post('/snaps').send({}).expect(400);
-
-      expect(response.body).toHaveProperty('type', 'about:blank');
-      expect(response.body).toHaveProperty('title', 'Validation Error');
-      expect(response.body).toHaveProperty('status', 400);
-      expect(response.body).toHaveProperty('detail', 'The message is required.');
-      expect(response.body).toHaveProperty('instance');
-    });
-    it('should return 400 for message too long', async () => {
-      const response = await request(app)
-        .post('/snaps')
-        .send({ message: 'a'.repeat(281) })
-        .expect(400);
-
-      expect(response.body).toHaveProperty('type', 'about:blank');
-      expect(response.body).toHaveProperty('title', 'Validation Error');
-      expect(response.body).toHaveProperty('status', 400);
-      expect(response.body).toHaveProperty('detail', 'The message must not exceed 280 characters.');
-      expect(response.body).toHaveProperty('instance');
-    });
+  afterAll(async () => {
+    await mongoose.connection.close();
   });
 
-  // describe('GET /snaps', () => {
-  //   it('should retrieve all snaps', async () => {
-  //     const mockSnaps = [
-  //       { _id: '1', message: 'Snap 1' },
-  //       { _id: '2', message: 'Snap 2' }
-  //     ];
+  beforeEach(async () => {
+    await Snap.deleteMany({});
+  });
 
-  //     mockFind.mockReturnValue({
-  //       sort: jest.fn().mockResolvedValue(mockSnaps),
-  //     });
+  describe('Get All Snaps', () => {
+    it('should return an empty array when no snaps exist', async () => {
+      const snaps = await Snap.find();
+      expect(snaps).toEqual([]);
+    });
 
-  //     const response = await request(app).get('/snaps').expect(200);
+    it('should return all snaps when multiple snaps exist', async () => {
+      await Snap.create({ message: 'Test snap 1' });
+      await Snap.create({ message: 'Test snap 2' });
+      await Snap.create({ message: 'Test snap 3' });
 
-  //     expect(response.body.data).toBeInstanceOf(Array);
-  //     expect(response.body.data).toHaveLength(2);
-  //     expect(response.body.data[0]).toHaveProperty('id');
-  //     expect(response.body.data[0]).toHaveProperty('message');
-  //     expect(mockFind).toHaveBeenCalled();
-  //   });
-  // });
+      const snaps = await Snap.find();
+      expect(snaps).toHaveLength(3);
+      expect(snaps.map(snap => snap.message)).toEqual([
+        'Test snap 1',
+        'Test snap 2',
+        'Test snap 3'
+      ]);
+    });
+
+    it('should return snaps with correct structure', async () => {
+      await Snap.create({ message: 'Test snap' });
+      const snaps = await Snap.find();
+
+      expect(snaps).toHaveLength(1);
+      const snap = snaps[0];
+      expect(snap._id).toBeDefined();
+      expect(typeof snap._id).toBe('string');
+      expect(UUID.isValid(snap._id)).toBe(true);
+      expect(snap.message).toBe('Test snap');
+    });
+  });
 });

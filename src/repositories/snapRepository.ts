@@ -15,7 +15,7 @@ export class SnapRepository implements ISnapRepository {
     const snap = new Snap({ _id: UUID.generate(), message });
     const savedSnap = await snap.save();
     return {
-      id: savedSnap._id,
+      id: savedSnap.id,
       message: savedSnap.message
     };
   }
