@@ -1,11 +1,11 @@
 {
   "scripts": {
     "start": "node dist/server.js",
-    "dev": "nodemon src/server.ts",
+    "dev": "docker-compose up -d mongodb && nodemon src/server.ts",
     "build": "tsc",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint . --ext .ts",
-    "test": "jest"
+    "test": "docker-compose up -d mongodb && jest"
   },
   "name": "ingsw2_tp_individual",
   "version": "1.0.0",
