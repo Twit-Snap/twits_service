@@ -13,6 +13,7 @@ module.exports = [
       ...tsPlugin.configs['recommended'].rules,
       '@typescript-eslint/no-unnecessary-type-assertion': 'off',
       '@typescript-eslint/no-unnecessary-type-constraint': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off'
     },
   },
 ];

@@ -1,8 +1,9 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { NotFoundError, ValidationError } from '../customErrors';
 import logger from '../utils/logger';
 
-export const errorHandler = (err: Error, req: Request, res: Response) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof NotFoundError) {
     logger.warn(`NotFoundError: ${err.message}`, {
       entityName: err.entityName,

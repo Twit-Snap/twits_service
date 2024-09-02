@@ -11,16 +11,21 @@ const app = express();
 
 app.use(express.json());
 
-// Connect to MongoDB
-mongoose
-  .connect(process.env.MONGODB_URI as string)
-  .then(() => logger.info('Connected to MongoDB'))
-  .catch(err => logger.error('MongoDB connection error:', err));
-
 // Routes
 app.use('/snaps', snapRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
+
+// Separate function for MongoDB connection
+export const connectToMongoDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI as string);
+    logger.info('Connected to MongoDB');
+  } catch (err) {
+    logger.error('MongoDB connection error:', err);
+    process.exit(1);
+  }
+};
 
 export default app;

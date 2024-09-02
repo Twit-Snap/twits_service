@@ -12,6 +12,9 @@ export const createSnap = async (
 ) => {
   try {
     const { message } = req.body;
+    if (!message) {
+      throw new ValidationError('message', 'The message is required.');
+    }
     if (message.length > 280) {
       throw new ValidationError('message', 'The message must not exceed 280 characters.');
     }
