@@ -1,5 +1,5 @@
 import { SnapResponse } from '../types/types';
-import { NotFoundError, ValidationError } from '../customErrors';
+import { NotFoundError, ValidationError } from '../types/customErrors';
 import Snap from './models/Snap';
 import { UUID } from '../utils/uuid';
 

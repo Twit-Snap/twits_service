@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { NotFoundError, ValidationError } from '../customErrors';
+import { NotFoundError, ValidationError } from '../types/customErrors';
 import logger from '../utils/logger';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

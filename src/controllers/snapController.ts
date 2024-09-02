@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ISnapRepository, SnapRepository } from '../repositories/snapRepository';
 import { SnapResponse, CreateSnapBody } from '../types/types';
-import { ValidationError } from '../customErrors';
+import { ValidationError } from '../types/customErrors';
 
 const snapRepository: ISnapRepository = new SnapRepository();
 
