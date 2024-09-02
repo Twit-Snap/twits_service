@@ -1,8 +1,8 @@
 # ToDo List
 
 ## Testing
-- [ ] Implement E2E or integration tests for each endpoint
-- [ ] Add a test for the 280 character limit validation
+- [X] Implement E2E or integration tests for each endpoint
+- [X] Add a test for the 280 character limit validation
 
 ## Documentation
 - [ ] Create a README.md file with:
@@ -26,7 +26,7 @@
 - [X] Ensure all code is formatted using the preferred formatter for TypeScript
 
 ## Optional Challenges
-- [ ] Add test for GET /snaps/{id} endpoint
+- [X] Add test for GET /snaps/{id} endpoint
 
 ## DevOps
 - [ ] Ensure all configuration is done through environment variables

@@ -108,4 +108,45 @@ describe('Snap API Tests', () => {
       expect(snap.message).toBe('Detailed snap');
     });
   });
+
+  describe('DELETE /snaps/:id', () => {
+    it('should delete a snap when given a valid ID', async () => {
+      const createdSnap = await Snap.create({ message: 'Test snap to delete' });
+
+      const response = await request(app).delete(`/snaps/${createdSnap.id}`);
+      expect(response.status).toBe(204);
+
+      const deletedSnap = await Snap.findById(createdSnap.id);
+      expect(deletedSnap).toBeNull();
+    });
+
+    it('should return 404 when trying to delete a non-existent snap', async () => {
+      const nonExistentId = 'e0462215-9238-4919-a4e0-0be725d7ed57';
+
+      const response = await request(app).delete(`/snaps/${nonExistentId}`);
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        detail: 'The Snap with ID e0462215-9238-4919-a4e0-0be725d7ed57 was not found.',
+        instance: '/snaps/e0462215-9238-4919-a4e0-0be725d7ed57',
+        status: 404,
+        title: 'Snap Not Found',
+        type: 'about:blank'
+      });
+    });
+
+    it('should return 400 when given an invalid ID format', async () => {
+      const invalidId = 'invalid-id-format';
+
+      const response = await request(app).delete(`/snaps/${invalidId}`);
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        'custom-field': 'id',
+        detail: 'Invalid UUID',
+        instance: '/snaps/invalid-id-format',
+        status: 400,
+        title: 'Validation Error',
+        type: 'about:blank'
+      });
+    });
+  });
 });
