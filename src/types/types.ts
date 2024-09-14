@@ -14,21 +14,21 @@ export type CreateSnapBody = {
 
 export interface Tweet {
   _id: string;
-  created_at: string;
-  entities: Entities;
-  favorite_count: number;
-  in_reply_to_status_id: string | null;
-  in_reply_to_user_id: string | null;
-  lang: string;
-  retweet_count: number;
+  createdAt: string;
   text: string;
+  favoriteCount: number;
+  retweetCount: number;
+  entities: Entities;
+  inReplyToTweetId: string | null;
+  inReplyToUserId: string | null;
+  lang: string;
   user: UserTweet;
-  user_id: number;
+  userId: number;
 }
 
 export interface Entities {
   hashtags: Hashtag[];
-  user_mentions: UserMention[];
+  userMentions: UserMention[];
   urls: URL[];
 }
 
