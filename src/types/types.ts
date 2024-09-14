@@ -52,5 +52,6 @@ export interface UserTweet {
   id: number;
   name: string;
   username: string;
+  imageUrl: string;
   verified: boolean;
 }
