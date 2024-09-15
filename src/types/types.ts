@@ -7,10 +7,7 @@ export type CreateSnapBody = {
   message: string;
 };
 
-
-
 // poc model
-
 
 export interface Tweet {
   _id: string;

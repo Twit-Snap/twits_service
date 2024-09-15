@@ -4,7 +4,7 @@
     "dev": "docker-compose up -d mongodb && nodemon src/server.ts",
     "build": "tsc",
     "format": "prettier --write \"src/**/*.ts\"",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint .",
     "test": "docker-compose up -d mongodb && jest"
   },
   "name": "ingsw2_tp_individual",
@@ -47,6 +47,13 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"]
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ]
   }
 }
