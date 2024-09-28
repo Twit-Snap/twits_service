@@ -1,5 +1,14 @@
+export interface TwitUser {
+  userId: number;
+  name: string;
+  username: string;
+  //profileImageUrl: string;
+  //verified: boolean;
+}
+
 export type SnapResponse = {
   id: string;
+  user: TwitUser;
   content: string;
   createdAt: string;
 };
@@ -11,15 +20,7 @@ export type CreateSnapBody = {
   authorUsername: string;
 };
 
-export interface TwitUser {
-  userId: number;
-  name: string;
-  username: string;
-  //profileImageUrl: string;
-  //verified: boolean;
-}
-
-export interface Tweet {
+export interface TwitSnap {
   id: string;
   createdAt: string;
   user: TwitUser;

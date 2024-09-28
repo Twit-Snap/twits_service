@@ -21,6 +21,7 @@ export class SnapRepository implements ISnapRepository {
     const savedSnap = await snap.save();
     return {
       id: savedSnap.id,
+      user: savedSnap.user,
       content: savedSnap.content,
       createdAt: savedSnap.createdAt
     };
@@ -30,6 +31,7 @@ export class SnapRepository implements ISnapRepository {
     const snaps = await TwitSnap.find().sort({ createdAt: -1 });
     return snaps.map(snap => ({
       id: snap.id,
+      user: snap.user,
       content: snap.content,
       createdAt: snap.createdAt
     }));
@@ -45,6 +47,7 @@ export class SnapRepository implements ISnapRepository {
     }
     return {
       id: snap.id,
+      user: snap.user,
       content: snap.content,
       createdAt: snap.createdAt
     };
