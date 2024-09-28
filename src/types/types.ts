@@ -1,26 +1,35 @@
 export type SnapResponse = {
   id: string;
-  message: string;
+  content: string;
+  createdAt: string;
 };
 
 export type CreateSnapBody = {
-  message: string;
+  content: string;
+  authorId: number;
+  authorName: string;
+  authorUsername: string;
 };
 
-// poc model
+export interface TwitUser {
+  userId: number;
+  name: string;
+  username: string;
+  //profileImageUrl: string;
+  //verified: boolean;
+}
 
 export interface Tweet {
-  _id: string;
+  id: string;
   createdAt: string;
-  text: string;
-  favoriteCount: number;
-  retweetCount: number;
-  entities: Entities;
-  inReplyToTweetId: string | null;
-  inReplyToUserId: string | null;
-  lang: string;
-  user: UserTweet;
-  userId: number;
+  user: TwitUser;
+  content: string;
+  //entities: Entities;
+  //inReplyToTweetId: string | null;
+  //inReplyToUserId: string | null;
+  //lang: string;
+  //favoriteCount: number;
+  //retweetCount: number;
 }
 
 export interface Entities {
@@ -43,12 +52,4 @@ export interface UserMention {
   id: number;
   username: string;
   indices: number[];
-}
-
-export interface UserTweet {
-  id: number;
-  name: string;
-  username: string;
-  imageUrl: string;
-  verified: boolean;
 }

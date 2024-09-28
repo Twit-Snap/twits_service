@@ -26,14 +26,14 @@ describe('Snap API Tests', () => {
     });
 
     it('should return all snaps when multiple snaps exist', async () => {
-      await Snap.create({ message: 'Test snap 1' });
-      await Snap.create({ message: 'Test snap 2' });
-      await Snap.create({ message: 'Test snap 3' });
+      await Snap.create({ content: 'Test snap 1' });
+      await Snap.create({ content: 'Test snap 2' });
+      await Snap.create({ content: 'Test snap 3' });
 
       const response = await request(app).get('/snaps');
       expect(response.status).toBe(200);
       expect(response.body.data).toHaveLength(3);
-      expect(response.body.data.map((snap: SnapResponse) => snap.message)).toEqual([
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
         'Test snap 3',
         'Test snap 2',
         'Test snap 1'
