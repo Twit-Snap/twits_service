@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../app';
 import mongoose from 'mongoose';
-import Snap from '../repositories/models/Snap';
+import TwitSnap from '../repositories/models/Snap';
 import { UUID } from '../utils/uuid';
 import { SnapResponse } from '../types/types';
 
@@ -15,7 +15,7 @@ describe('Snap API Tests', () => {
   });
 
   beforeEach(async () => {
-    await Snap.deleteMany({});
+    await TwitSnap.deleteMany({});
   });
 
   describe('GET /snaps', () => {
@@ -26,9 +26,30 @@ describe('Snap API Tests', () => {
     });
 
     it('should return all snaps when multiple snaps exist', async () => {
-      await Snap.create({ content: 'Test snap 1' });
-      await Snap.create({ content: 'Test snap 2' });
-      await Snap.create({ content: 'Test snap 3' });
+      await TwitSnap.create({
+        user : {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user : {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'Test snap 2'
+      });
+      await TwitSnap.create({
+        user : {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3'
+      });
 
       const response = await request(app).get('/snaps');
       expect(response.status).toBe(200);
@@ -41,7 +62,14 @@ describe('Snap API Tests', () => {
     });
 
     it('should return snaps with correct structure', async () => {
-      await Snap.create({ message: 'Test snap' });
+      await TwitSnap.create({
+        user : {
+          userId: 1,
+          name: 'Test User',
+          username: 'testuser'
+        },
+        content: 'Test snap'
+      });
 
       const response = await request(app).get('/snaps');
       expect(response.status).toBe(200);
@@ -49,21 +77,37 @@ describe('Snap API Tests', () => {
 
       const snap = response.body.data[0];
       expect(snap.id).toBeDefined();
+      expect(snap.user.userId).toBeDefined();
+      expect(snap.user.name).toBeDefined();
+      expect(snap.user.username).toBeDefined();
+      expect(snap.content).toBeDefined();
       expect(typeof snap.id).toBe('string');
+      expect(typeof snap.user.userId).toBe('number');
+      expect(typeof snap.user.name).toBe('string');
+      expect(typeof snap.user.username).toBe('string');
+      expect(typeof snap.content).toBe('string');
       expect(UUID.isValid(snap.id)).toBe(true);
-      expect(snap.message).toBe('Test snap');
+      expect(snap.content).toBe('Test snap');
     });
   });
 
   describe('GET /snaps/:id', () => {
     it('should return a snap when given a valid ID', async () => {
-      const createdSnap = await Snap.create({ message: 'Test snap' });
+      const createdSnap = await TwitSnap.create({
+        user : {
+          userId: 1,
+          name: 'Test User',
+          username: 'testuser'
+        },
+        content: 'Test snap'
+      });
 
       const response = await request(app).get(`/snaps/${createdSnap.id}`);
       expect(response.status).toBe(200);
       expect(response.body.data).toBeDefined();
+      expect(response.body.data.id).toBeDefined();
       expect(response.body.data.id).toBe(createdSnap.id);
-      expect(response.body.data.message).toBe('Test snap');
+      expect(response.body.data.content).toBe('Test snap');
     });
 
     it('should return 404 when given a non-existent ID', async () => {
@@ -96,27 +140,47 @@ describe('Snap API Tests', () => {
     });
 
     it('should return snap with correct structure', async () => {
-      const createdSnap = await Snap.create({ message: 'Detailed snap' });
+      const createdSnap = await TwitSnap.create({
+        user : {
+          userId: 1,
+          name: 'Test User',
+          username: 'testuser'
+        },
+        content: 'Detailed snap'
+      });
 
       const response = await request(app).get(`/snaps/${createdSnap.id}`);
       expect(response.status).toBe(200);
 
       const snap = response.body.data;
       expect(snap.id).toBeDefined();
+      expect(snap.user.userId).toBeDefined();
+      expect(snap.user.name).toBeDefined();
+      expect(snap.user.username).toBeDefined();
       expect(typeof snap.id).toBe('string');
+      expect(typeof snap.user.userId).toBe('number');
+      expect(typeof snap.user.name).toBe('string');
+      expect(typeof snap.user.username).toBe('string');
       expect(UUID.isValid(snap.id)).toBe(true);
-      expect(snap.message).toBe('Detailed snap');
+      expect(snap.content).toBe('Detailed snap');
     });
   });
 
   describe('DELETE /snaps/:id', () => {
     it('should delete a snap when given a valid ID', async () => {
-      const createdSnap = await Snap.create({ message: 'Test snap to delete' });
+      const createdSnap = await TwitSnap.create({
+        user : {
+          userId: 1,
+          name: 'Test User',
+          username: 'testuser'
+        },
+        content: 'Test twit to delete'
+      });
 
       const response = await request(app).delete(`/snaps/${createdSnap.id}`);
       expect(response.status).toBe(204);
 
-      const deletedSnap = await Snap.findById(createdSnap.id);
+      const deletedSnap = await TwitSnap.findById(createdSnap.id);
       expect(deletedSnap).toBeNull();
     });
 

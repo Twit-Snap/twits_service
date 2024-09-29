@@ -21,7 +21,7 @@ export type CreateSnapBody = {
 };
 
 export interface TwitSnap {
-  id: string;
+  _id: string;
   createdAt: string;
   user: TwitUser;
   content: string;

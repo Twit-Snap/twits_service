@@ -13,7 +13,7 @@ export interface ISnapRepository {
 export class SnapRepository implements ISnapRepository {
   async create(content: string, user: TwitUser): Promise<SnapResponse> {
     const snap = new TwitSnap({
-      id: UUID.generate(),
+      _id: UUID.generate(),
       content,
       user,
       createdAt: new Date().toISOString()
@@ -30,7 +30,7 @@ export class SnapRepository implements ISnapRepository {
   async findAll(): Promise<SnapResponse[]> {
     const snaps = await TwitSnap.find().sort({ createdAt: -1 });
     return snaps.map(snap => ({
-      id: snap.id,
+      id: snap._id,
       user: snap.user,
       content: snap.content,
       createdAt: snap.createdAt
@@ -46,7 +46,7 @@ export class SnapRepository implements ISnapRepository {
       throw new NotFoundError('Snap', id);
     }
     return {
-      id: snap.id,
+      id: snap._id,
       user: snap.user,
       content: snap.content,
       createdAt: snap.createdAt
