@@ -6,13 +6,16 @@ import { errorHandler } from './middleware/errorHandler';
 import logger from './utils/logger';
 
 dotenv.config();
-
+const cors = require('cors');
 const app = express();
 
+//CORS middleware
+app.use(cors());
 app.use(express.json());
 
 // Routes
 app.use('/snaps', snapRoutes);
+
 
 // Error handling middleware
 app.use(errorHandler);
