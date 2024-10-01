@@ -15,12 +15,7 @@ curl -X GET http://localhost:8080/snaps/e0462215-9238-4919-a4e0-0be725d7ed57
 # create snap
 
 ### message ok
-curl -X POST http://localhost:8080/snaps \
-     -H "Content-Type: application/json" \
-     -d '{
-           "message": "hello world"
-         }'
-
+curl -X POST http://localhost:8080/snaps -H "Content-Type: application/json" -d '{"authorId" : 0, "authorName" : "Test User 1", "authorUsername" : "testuser1", "content" : "Hello world!"}'
 
 # delete snap
 

@@ -1,30 +1,39 @@
-import { SnapResponse } from '../types/types';
+import { SnapResponse, TwitUser } from '../types/types';
 import { NotFoundError, ValidationError } from '../types/customErrors';
-import Snap from './models/Snap';
+import TwitSnap from './models/Snap';
 import { UUID } from '../utils/uuid';
 
 export interface ISnapRepository {
-  create(message: string): Promise<SnapResponse>;
+  create(message: string, user: TwitUser): Promise<SnapResponse>;
   findAll(): Promise<SnapResponse[]>;
   findById(id: string): Promise<SnapResponse>;
   deleteById(id: string): Promise<void>;
 }
 
 export class SnapRepository implements ISnapRepository {
-  async create(message: string): Promise<SnapResponse> {
-    const snap = new Snap({ _id: UUID.generate(), message });
+  async create(content: string, user: TwitUser): Promise<SnapResponse> {
+    const snap = new TwitSnap({
+      _id: UUID.generate(),
+      content,
+      user,
+      createdAt: new Date().toISOString()
+    });
     const savedSnap = await snap.save();
     return {
       id: savedSnap.id,
-      message: savedSnap.message
+      user: savedSnap.user,
+      content: savedSnap.content,
+      createdAt: savedSnap.createdAt
     };
   }
 
   async findAll(): Promise<SnapResponse[]> {
-    const snaps = await Snap.find().sort({ createdAt: -1 });
+    const snaps = await TwitSnap.find().sort({ createdAt: -1 });
     return snaps.map(snap => ({
       id: snap._id,
-      message: snap.message
+      user: snap.user,
+      content: snap.content,
+      createdAt: snap.createdAt
     }));
   }
 
@@ -32,13 +41,15 @@ export class SnapRepository implements ISnapRepository {
     if (!UUID.isValid(id)) {
       throw new ValidationError('id', 'Invalid UUID');
     }
-    const snap = await Snap.findById(id);
+    const snap = await TwitSnap.findById(id);
     if (!snap) {
       throw new NotFoundError('Snap', id);
     }
     return {
       id: snap._id,
-      message: snap.message
+      user: snap.user,
+      content: snap.content,
+      createdAt: snap.createdAt
     };
   }
 
@@ -46,7 +57,7 @@ export class SnapRepository implements ISnapRepository {
     if (!UUID.isValid(id)) {
       throw new ValidationError('id', 'Invalid UUID');
     }
-    const result = await Snap.deleteOne({ _id: id });
+    const result = await TwitSnap.deleteOne({ _id: id });
     if (result.deletedCount === 0) {
       throw new NotFoundError('Snap', id);
     }
