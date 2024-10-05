@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import snapRoutes from './routes/snapRoutes';
+import hashtagsRoutes from './routes/hashtagsRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import logger from './utils/logger';
 
@@ -15,7 +16,7 @@ app.use(express.json());
 
 // Routes
 app.use('/snaps', snapRoutes);
-
+app.use('/hashtags', hashtagsRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

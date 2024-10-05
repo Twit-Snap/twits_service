@@ -25,7 +25,7 @@ export interface TwitSnap {
   createdAt: string;
   user: TwitUser;
   content: string;
-  //entities: Entities;
+  entities: Entities;
   //inReplyToTweetId: string | null;
   //inReplyToUserId: string | null;
   //lang: string;
@@ -35,13 +35,12 @@ export interface TwitSnap {
 
 export interface Entities {
   hashtags: Hashtag[];
-  userMentions: UserMention[];
-  urls: URL[];
+  //userMentions: UserMention[];
+  //urls: URL[];
 }
 
 export interface Hashtag {
   text: string;
-  indices: number[];
 }
 
 export interface URL {

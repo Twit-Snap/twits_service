@@ -3,7 +3,7 @@ import {
   createSnap,
   deleteSnapById,
   getAllSnaps,
-  getSnapById
+  getSnapById,
 } from '../controllers/snapController';
 
 const router = express.Router();
