@@ -32,7 +32,10 @@ describe('Snap API Tests', () => {
           name: 'Test User 1',
           username: 'testuser1'
         },
-        content: 'Test snap 1'
+        content: 'Test snap 1',
+        entities: {
+          hashtags: []
+        }
       });
       await TwitSnap.create({
         user : {
@@ -40,7 +43,10 @@ describe('Snap API Tests', () => {
           name: 'Test User 2',
           username: 'testuser2'
         },
-        content: 'Test snap 2'
+        content: 'Test snap 2',
+        entities: {
+          hashtags: []
+        }
       });
       await TwitSnap.create({
         user : {
@@ -48,7 +54,10 @@ describe('Snap API Tests', () => {
           name: 'Test User 3',
           username: 'testuser3'
         },
-        content: 'Test snap 3'
+        content: 'Test snap 3',
+        entities: {
+          hashtags: []
+        }
       });
 
       const response = await request(app).get('/snaps');
@@ -68,7 +77,10 @@ describe('Snap API Tests', () => {
           name: 'Test User',
           username: 'testuser'
         },
-        content: 'Test snap'
+        content: 'Test snap',
+        entities: {
+          hashtags: []
+        }
       });
 
       const response = await request(app).get('/snaps');
@@ -99,7 +111,10 @@ describe('Snap API Tests', () => {
           name: 'Test User',
           username: 'testuser'
         },
-        content: 'Test snap'
+        content: 'Test snap',
+        entities: {
+          hashtags: []
+        }
       });
 
       const response = await request(app).get(`/snaps/${createdSnap.id}`);
@@ -146,7 +161,10 @@ describe('Snap API Tests', () => {
           name: 'Test User',
           username: 'testuser'
         },
-        content: 'Detailed snap'
+        content: 'Detailed snap',
+        entities: {
+          hashtags: []
+        }
       });
 
       const response = await request(app).get(`/snaps/${createdSnap.id}`);
@@ -174,7 +192,10 @@ describe('Snap API Tests', () => {
           name: 'Test User',
           username: 'testuser'
         },
-        content: 'Test twit to delete'
+        content: 'Test twit to delete',
+        entities: {
+          hashtags: []
+        }
       });
 
       const response = await request(app).delete(`/snaps/${createdSnap.id}`);
