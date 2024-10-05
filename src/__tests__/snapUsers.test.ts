@@ -7,11 +7,9 @@ import { SnapResponse } from '../types/types';
 describe('Snap users related API Tests', () => {
   beforeAll(async () => {
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/test_db');
-    await TwitSnap.deleteMany({});
   });
 
   afterAll(async () => {
-    await TwitSnap.deleteMany({});
     await mongoose.connection.close();
   });
 
