@@ -17,10 +17,10 @@ describe('Snap users related API Tests', () => {
     await TwitSnap.deleteMany({});
   });
 
-  describe('POST /snaps/users', () => {
+  describe('POST /snaps/by_users', () => {
     it('should return an empty array when no snaps exist', async () => {
       const response = await request(app)
-        .post('/snaps/users')
+        .post('/snaps/by_users')
         .send({ usersIds: [1] });
 
       expect(response.status).toBe(200);
@@ -54,7 +54,7 @@ describe('Snap users related API Tests', () => {
       });
 
       const response = await request(app)
-        .post('/snaps/users')
+        .post('/snaps/by_users')
         .send({ usersIds: [1] })
         .expect(200);
 
@@ -92,7 +92,7 @@ describe('Snap users related API Tests', () => {
       });
 
       const response = await request(app)
-        .post('/snaps/users')
+        .post('/snaps/by_users')
         .send({ usersIds: [1, 2, 3] })
         .expect(200);
 
@@ -105,7 +105,7 @@ describe('Snap users related API Tests', () => {
     });
 
     it('should return a status code of 400 when no body is specified', async () => {
-      const response = await request(app).post('/snaps/users');
+      const response = await request(app).post('/snaps/by_users');
 
       expect(response.status).toBe(400);
     });

@@ -13,6 +13,6 @@ router.post('/', createSnap);
 router.get('/', getAllSnaps);
 router.get('/:id', getSnapById);
 router.delete('/:id', deleteSnapById);
-router.post('/users', getSnapsByUsersIds);
+router.post('/by_users', getSnapsByUsersIds);
 
 export default router;
