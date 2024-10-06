@@ -70,11 +70,21 @@ export const deleteSnapById = async (
   }
 };
 
-export const getSnapsByUsersIds = async (usersIds: number[]) => {
-  if (!usersIds) {
-    throw new ValidationError('usersId', 'Users IDs required!');
-  }
+export const getSnapsByUsersIds = async (
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { usersIds } = req.body;
 
-  const snaps: SnapResponse[] = await snapRepository.findByUsersIds(usersIds);
-  return { data: snaps };
+    if (!usersIds) {
+      throw new ValidationError('usersId', 'Users IDs required!');
+    }
+
+    const snaps: SnapResponse[] = await snapRepository.findByUsersIds(usersIds);
+    res.status(200).json({ data: snaps });
+  } catch (error) {
+    next(error);
+  }
 };
