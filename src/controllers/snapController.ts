@@ -1,9 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
 import { ISnapRepository, SnapRepository } from '../repositories/snapRepository';
+import { ISnapService, SnapService } from '../service/snapService';
 import { ValidationError } from '../types/customErrors';
 import { CreateSnapBody, SnapResponse, TwitUser } from '../types/types';
 
 const snapRepository: ISnapRepository = new SnapRepository();
+const snapService: ISnapService = new SnapService();
 
 export const createSnap = async (
   req: Request<{}, {}, CreateSnapBody>,
@@ -78,9 +80,18 @@ export const getSnapsByUsersIds = async (
   try {
     const { usersIds } = req.body;
 
+    const createdAt: string | undefined = req.query.createdAt?.toString();
+    const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
+    const older: boolean = req.query.older === 'true' ? true : false;
+
     snapService.validateUsersIds(usersIds);
 
-    const snaps: SnapResponse[] = await snapRepository.findByUsersIds(usersIds);
+    const snaps: SnapResponse[] = await snapRepository.findByUsersIds(
+      usersIds,
+      createdAt,
+      limit,
+      older
+    );
     res.status(200).json({ data: snaps });
   } catch (error) {
     next(error);
