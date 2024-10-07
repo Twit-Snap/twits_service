@@ -16,7 +16,6 @@ app.use(express.json());
 // Routes
 app.use('/snaps', snapRoutes);
 
-
 // Error handling middleware
 app.use(errorHandler);
 

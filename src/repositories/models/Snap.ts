@@ -20,7 +20,7 @@ const TwitSnapSchema: Schema = new Schema(
       userId: { type: Number, required: true },
       name: { type: String, required: true },
       username: { type: String, required: true }
-    },
+    }
   },
   { timestamps: true }
 );
