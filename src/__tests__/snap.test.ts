@@ -1,9 +1,9 @@
+import mongoose from 'mongoose';
 import request from 'supertest';
 import app from '../app';
-import mongoose from 'mongoose';
 import TwitSnap from '../repositories/models/Snap';
-import { UUID } from '../utils/uuid';
 import { SnapResponse } from '../types/types';
+import { UUID } from '../utils/uuid';
 
 describe('Snap API Tests', () => {
   beforeAll(async () => {
@@ -11,6 +11,7 @@ describe('Snap API Tests', () => {
   });
 
   afterAll(async () => {
+    await TwitSnap.deleteMany({});
     await mongoose.connection.close();
   });
 

@@ -10,6 +10,7 @@ describe('Snap users related API Tests', () => {
   });
 
   afterAll(async () => {
+    await TwitSnap.deleteMany({});
     await mongoose.connection.close();
   });
 
