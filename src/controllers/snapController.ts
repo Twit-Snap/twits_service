@@ -78,9 +78,7 @@ export const getSnapsByUsersIds = async (
   try {
     const { usersIds } = req.body;
 
-    if (!usersIds) {
-      throw new ValidationError('usersId', 'Users IDs required!');
-    }
+    snapService.validateUsersIds(usersIds);
 
     const snaps: SnapResponse[] = await snapRepository.findByUsersIds(usersIds);
     res.status(200).json({ data: snaps });
