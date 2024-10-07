@@ -6,7 +6,11 @@ import TwitSnap, { ISnapModel } from './models/Snap';
 
 export interface ISnapRepository {
   create(message: string, user: TwitUser): Promise<SnapResponse>;
-  findAll(): Promise<SnapResponse[]>;
+  findAll(
+    createdAt: string | undefined,
+    limit: number | undefined,
+    older: boolean
+  ): Promise<SnapResponse[]>;
   findById(id: string): Promise<SnapResponse>;
   deleteById(id: string): Promise<void>;
   findByUsersIds(
@@ -34,8 +38,24 @@ export class SnapRepository implements ISnapRepository {
     };
   }
 
-  async findAll(): Promise<SnapResponse[]> {
-    const snaps = await TwitSnap.find().sort({ createdAt: -1 });
+  async findAll(
+    createdAt: string | undefined,
+    limit: number | undefined,
+    older: boolean
+  ): Promise<SnapResponse[]> {
+    var filter: RootFilterQuery<ISnapModel> = {};
+
+    if (createdAt) {
+      filter = {
+        ...filter,
+        createdAt: older ? { $gt: createdAt } : { $lt: createdAt }
+      };
+    }
+
+    const snaps = await TwitSnap.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(limit ? limit : 20);
+
     return snaps.map(snap => ({
       id: snap._id,
       user: snap.user,

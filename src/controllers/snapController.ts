@@ -37,7 +37,12 @@ export const createSnap = async (
 
 export const getAllSnaps = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const snaps: SnapResponse[] = await snapRepository.findAll();
+    const createdAt: string | undefined = req.query.createdAt?.toString();
+    const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
+    const older: boolean = req.query.older === 'true' ? true : false;
+
+    const snaps: SnapResponse[] = await snapRepository.findAll(createdAt, limit, older);
+
     res.status(200).json({ data: snaps });
   } catch (error) {
     next(error);
