@@ -48,7 +48,7 @@ export class SnapRepository implements ISnapRepository {
     if (createdAt) {
       filter = {
         ...filter,
-        createdAt: older ? { $gt: createdAt } : { $lt: createdAt }
+        createdAt: older ? { $lt: createdAt } : { $gt: createdAt }
       };
     }
 
@@ -101,7 +101,7 @@ export class SnapRepository implements ISnapRepository {
     if (createdAt) {
       filter = {
         ...filter,
-        createdAt: older ? { $gt: createdAt } : { $lt: createdAt }
+        createdAt: older ? { $lt: createdAt } : { $gt: createdAt }
       };
     }
 

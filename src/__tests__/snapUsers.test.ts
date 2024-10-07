@@ -190,7 +190,7 @@ describe('Snap users related API Tests', () => {
       expect(response.body.data).toHaveLength(20);
     });
 
-    it('should return items older than createdAt as default behaviour', async () => {
+    it('should return items newer than createdAt as default behaviour', async () => {
       await TwitSnap.create({
         user: {
           userId: 1,
@@ -223,46 +223,10 @@ describe('Snap users related API Tests', () => {
         .expect(200);
 
       expect(response.body.data).toHaveLength(1);
-      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual(['Test snap 1']);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual(['Test snap 3']);
     });
 
-    it('should return items older than createdAt if older is false', async () => {
-      await TwitSnap.create({
-        user: {
-          userId: 1,
-          name: 'Test User 1',
-          username: 'testuser1'
-        },
-        content: 'Test snap 1'
-      });
-      const twit = await TwitSnap.create({
-        user: {
-          userId: 2,
-          name: 'Test User 2',
-          username: 'testuser2'
-        },
-        content: 'Test snap 2'
-      });
-      await TwitSnap.create({
-        user: {
-          userId: 3,
-          name: 'Test User 3',
-          username: 'testuser3'
-        },
-        content: 'Test snap 3'
-      });
-
-      const response = await request(app)
-        .post('/snaps/by_users')
-        .send({ usersIds: [1, 2, 3] })
-        .query({ createdAt: twit.createdAt, older: false })
-        .expect(200);
-
-      expect(response.body.data).toHaveLength(1);
-      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual(['Test snap 1']);
-    });
-
-    it('should return items newer than createdAt if older is true', async () => {
+    it('should return items older than createdAt if older is true', async () => {
       await TwitSnap.create({
         user: {
           userId: 1,
@@ -292,6 +256,42 @@ describe('Snap users related API Tests', () => {
         .post('/snaps/by_users')
         .send({ usersIds: [1, 2, 3] })
         .query({ createdAt: twit.createdAt, older: true })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual(['Test snap 1']);
+    });
+
+    it('should return items newer than createdAt if older is false', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1'
+      });
+      const twit = await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app)
+        .post('/snaps/by_users')
+        .send({ usersIds: [1, 2, 3] })
+        .query({ createdAt: twit.createdAt, older: false })
         .expect(200);
 
       expect(response.body.data).toHaveLength(1);
