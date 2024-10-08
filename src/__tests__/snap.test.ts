@@ -213,4 +213,133 @@ describe('Snap API Tests', () => {
       });
     });
   });
+
+  describe('GET /snaps/by_username/:username', () => {
+
+    it('should return an empty array with a non-existent username ', async () => {
+      await TwitSnap.create({
+        user : {
+          userId: 1,
+          name: 'Test User',
+          username: 'testuser'
+        },
+        content: 'Test snap'
+      });
+
+      const invalidUsername = 'username test';
+      const response = await request(app).get(`/snaps/by_username/${invalidUsername}`);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ data: [] });
+    });
+
+    it('should return a snap if is a unique snap with the username ', async () => {
+      const createdSnap = await TwitSnap.create({
+        user : {
+          userId: 1,
+          name: 'Test User',
+          username: 'testuser'
+        },
+        content: 'Test snap'
+      });
+
+      const response = await request(app).get(`/snaps/by_username/${createdSnap.user.username}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toHaveLength(1);
+
+      const snap = response.body.data[0];
+      expect(snap.user.username).toEqual(createdSnap.user.username);
+      expect(snap.content).toEqual(createdSnap.content);
+
+
+    });
+
+    it('should return an array of snaps with the same username', async () => {
+
+      const validUsername = 'testuser'
+      await TwitSnap.create({
+        user : {
+          userId: 1,
+          name: 'Test User',
+          username: validUsername
+        },
+        content: 'Test snap 1'
+      });
+
+      await TwitSnap.create({
+        user : {
+          userId: 2,
+          name: 'Test User',
+          username: validUsername
+        },
+        content: 'Test snap 2'
+      });
+
+      await TwitSnap.create({
+        user : {
+          userId: 3,
+          name: 'Test User',
+          username: validUsername
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app).get(`/snaps/by_username/${validUsername}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toHaveLength(3);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'Test snap 3',
+        'Test snap 2',
+        'Test snap 1'
+      ]);
+
+    });
+
+    //Todo
+    it('should return 400 when given an empty username ', async () => {
+
+
+      const username = '';
+      const response = await request(app).get(`/snaps/by_username/${username}`);
+    /*
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        detail: 'Username required!',
+        instance: `/snaps/by_username/${username}`,
+        status: 400,
+        title: 'Validation Error',
+        type: 'about:blank'
+      });
+      */
+
+
+    });
+
+    it('should return snap with correct structure', async () => {
+      const createdSnap = await TwitSnap.create({
+        user : {
+          userId: 1,
+          name: 'Test User',
+          username: 'testuser'
+        },
+        content: 'Detailed snap'
+      });
+
+      const response = await request(app).get(`/snaps/by_username/${createdSnap.user.username}`);
+      expect(response.status).toBe(200);
+
+      const snap = response.body.data[0];
+      expect(snap.id).toBeDefined();
+      expect(snap.user.userId).toBeDefined();
+      expect(snap.user.name).toBeDefined();
+      expect(snap.user.username).toBeDefined();
+      expect(typeof snap.id).toBe('string');
+      expect(typeof snap.user.userId).toBe('number');
+      expect(typeof snap.user.name).toBe('string');
+      expect(typeof snap.user.username).toBe('string');
+      expect(UUID.isValid(snap.id)).toBe(true);
+      expect(snap.content).toBe('Detailed snap');
+    });
+  });
 });
