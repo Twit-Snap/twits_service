@@ -255,6 +255,179 @@ describe('Snap API Tests', () => {
       expect(response.body.data).toHaveLength(1);
       expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual(['Test snap 3']);
     });
+
+    it("should return items that has 'hello' his content", async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'hello Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app).get('/snaps/').query({ has: 'hello' }).expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'hello Test snap 2'
+      ]);
+    });
+
+    it('should return all items if has param is undefined', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'hello Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app).get('/snaps/').query({ has: undefined }).expect(200);
+
+      expect(response.body.data).toHaveLength(3);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'Test snap 3',
+        'hello Test snap 2',
+        'Test snap 1'
+      ]);
+    });
+
+    it("should return items that have part of the word 'hello' ('hel') in his content", async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'hello Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app).get('/snaps/').query({ has: 'hel' }).expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'hello Test snap 2'
+      ]);
+    });
+
+    it("should return items that have part of the word 'hello' ('hel') in his content case insensitive", async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'hello Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app).get('/snaps/').query({ has: 'HeL' }).expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'hello Test snap 2'
+      ]);
+    });
+
+    it("should return items in unicode when 'has' is a emoji", async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1 😎😎😎'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'hello Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3 😎🤓👆'
+      });
+
+      const response = await request(app).get('/snaps/').query({ has: '😎' }).expect(200);
+
+      expect(response.body.data).toHaveLength(2);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'Test snap 3 😎🤓👆',
+        'Test snap 1 😎😎😎'
+      ]);
+    });
   });
 
   describe('GET /snaps/:id', () => {
