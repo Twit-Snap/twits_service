@@ -9,6 +9,7 @@ export interface ISnapRepository {
   findById(id: string): Promise<SnapResponse>;
   deleteById(id: string): Promise<void>;
   findByUsersIds(usersIds: number[]): Promise<SnapResponse[]>;
+  findByUsername(username: string): Promise<SnapResponse[]>;
 }
 
 export class SnapRepository implements ISnapRepository {
@@ -67,6 +68,16 @@ export class SnapRepository implements ISnapRepository {
   async findByUsersIds(usersIds: number[]): Promise<SnapResponse[]> {
     const snaps = await TwitSnap.find({ 'user.userId': { $in: usersIds } }).sort({ createdAt: -1 });
 
+    return snaps.map(snap => ({
+      id: snap._id,
+      user: snap.user,
+      content: snap.content,
+      createdAt: snap.createdAt
+    }));
+  }
+
+  async findByUsername(username: string): Promise<SnapResponse[]> {
+    const snaps = await TwitSnap.find({ 'user.username': { $in: username  } }).sort({ createdAt: -1 });
     return snaps.map(snap => ({
       id: snap._id,
       user: snap.user,
