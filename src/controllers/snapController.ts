@@ -88,3 +88,20 @@ export const getSnapsByUsersIds = async (
     next(error);
   }
 };
+
+export const getSnapsByUsername = async (
+  req: Request<{ username: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { username } = req.params;
+    if (!username) {
+      throw new ValidationError('username', 'Username required!');
+    }
+    const snaps: SnapResponse[] = await snapRepository.findByUsername(username);
+    res.status(200).json({ data: snaps });
+  } catch (error) {
+    next(error);
+  }
+};
