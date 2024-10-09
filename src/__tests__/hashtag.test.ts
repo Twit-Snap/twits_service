@@ -26,58 +26,56 @@ describe('Snap API Tests', () => {
     });
   });
 
-    it('should return an empty array when no snaps exist with said tag', async () => {
-      await TwitSnap.create(
-        {
-          user : {
-            userId: 1,
-            name: 'Test User 1',
-            username: 'testuser1'
-          },
-          content: 'Hello! Doing a #Test',
-          entities: {
-            hashtags: [{ text: '#Test' }]
-          }
-        }
-      );
-
-      const response = await request(app).get('/hashtags/Test');
-      expect(response.status).toBe(200);
-      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
-        'Hello! Doing a #Test'
-      ]);
-    });
-
-  it('should return all snaps with the same tag', async () => {
+  it('should return an empty array when no snaps exist with said tag', async () => {
     await TwitSnap.create({
-      user : {
+      user: {
         userId: 1,
         name: 'Test User 1',
         username: 'testuser1'
       },
-      content: "Hello! Doing a #Test 1",
+      content: 'Hello! Doing a #Test',
+      entities: {
+        hashtags: [{ text: '#Test' }]
+      }
+    });
+
+    const response = await request(app).get('/hashtags/Test');
+    expect(response.status).toBe(200);
+    expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+      'Hello! Doing a #Test'
+    ]);
+  });
+
+  it('should return all snaps with the same tag', async () => {
+    await TwitSnap.create({
+      user: {
+        userId: 1,
+        name: 'Test User 1',
+        username: 'testuser1'
+      },
+      content: 'Hello! Doing a #Test 1',
       entities: {
         hashtags: [{ text: '#Test' }]
       }
     });
     await TwitSnap.create({
-      user : {
+      user: {
         userId: 2,
         name: 'Test User 2',
         username: 'testuser2'
       },
-      content: "Hello! Doing a #Test 2",
+      content: 'Hello! Doing a #Test 2',
       entities: {
         hashtags: [{ text: '#Test' }]
       }
     });
     await TwitSnap.create({
-      user : {
+      user: {
         userId: 3,
         name: 'Test User 3',
         username: 'testuser3'
       },
-      content: "Hello! Doing a #Test 3",
+      content: 'Hello! Doing a #Test 3',
       entities: {
         hashtags: [{ text: '#Test' }]
       }
@@ -87,9 +85,9 @@ describe('Snap API Tests', () => {
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(3);
     expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
-      "Hello! Doing a #Test 3",
-      "Hello! Doing a #Test 2",
-      "Hello! Doing a #Test 1"
+      'Hello! Doing a #Test 3',
+      'Hello! Doing a #Test 2',
+      'Hello! Doing a #Test 1'
     ]);
   });
 });

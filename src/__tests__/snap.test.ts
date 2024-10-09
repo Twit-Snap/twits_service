@@ -392,7 +392,7 @@ describe('Snap API Tests', () => {
   describe('GET /snaps/by_username/:username', () => {
     it('should return an empty array with a non-existent username ', async () => {
       await TwitSnap.create({
-        user : {
+        user: {
           userId: 1,
           name: 'Test User',
           username: 'testuser'
@@ -406,7 +406,7 @@ describe('Snap API Tests', () => {
     });
     it('should return a snap if is a unique snap with the username ', async () => {
       const createdSnap = await TwitSnap.create({
-        user : {
+        user: {
           userId: 1,
           name: 'Test User',
           username: 'testuser'
@@ -421,9 +421,9 @@ describe('Snap API Tests', () => {
       expect(snap.content).toEqual(createdSnap.content);
     });
     it('should return an array of snaps with the same username', async () => {
-      const validUsername = 'testuser'
+      const validUsername = 'testuser';
       await TwitSnap.create({
-        user : {
+        user: {
           userId: 1,
           name: 'Test User',
           username: validUsername
@@ -431,7 +431,7 @@ describe('Snap API Tests', () => {
         content: 'Test snap 1'
       });
       await TwitSnap.create({
-        user : {
+        user: {
           userId: 2,
           name: 'Test User',
           username: validUsername
@@ -439,7 +439,7 @@ describe('Snap API Tests', () => {
         content: 'Test snap 2'
       });
       await TwitSnap.create({
-        user : {
+        user: {
           userId: 3,
           name: 'Test User',
           username: validUsername
@@ -472,7 +472,7 @@ describe('Snap API Tests', () => {
     });
     it('should return snap with correct structure', async () => {
       const createdSnap = await TwitSnap.create({
-        user : {
+        user: {
           userId: 1,
           name: 'Test User',
           username: 'testuser'

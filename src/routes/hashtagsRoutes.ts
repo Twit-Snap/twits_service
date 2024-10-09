@@ -1,7 +1,5 @@
 import express from 'express';
-import {
-  getSnapsByHashtag
-} from '../controllers/snapController';
+import { getSnapsByHashtag } from '../controllers/snapController';
 
 const router = express.Router();
 

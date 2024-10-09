@@ -121,7 +121,9 @@ export class SnapRepository implements ISnapRepository {
   }
 
   async findByHashtag(hashtag: string): Promise<SnapResponse[]> {
-    const snaps = await TwitSnap.find({ 'entities.hashtags.text': `#${hashtag}` }).sort({ createdAt: -1 });
+    const snaps = await TwitSnap.find({ 'entities.hashtags.text': `#${hashtag}` }).sort({
+      createdAt: -1
+    });
     return snaps.map(snap => ({
       id: snap._id,
       user: snap.user,
@@ -131,7 +133,9 @@ export class SnapRepository implements ISnapRepository {
   }
 
   async findByUsername(username: string): Promise<SnapResponse[]> {
-    const snaps = await TwitSnap.find({ 'user.username': { $in: username  } }).sort({ createdAt: -1 });
+    const snaps = await TwitSnap.find({ 'user.username': { $in: username } }).sort({
+      createdAt: -1
+    });
     return snaps.map(snap => ({
       id: snap._id,
       user: snap.user,
