@@ -96,9 +96,7 @@ export const getSnapsByUsername = async (
 ) => {
   try {
     const { username } = req.params;
-    if (!username) {
-      throw new ValidationError('username', 'Username required!');
-    }
+    validateUsername(username);
 
     const snaps: SnapResponse[] = await snapRepository.findByUsername(username);
     res.status(200).json({ data: snaps });
@@ -106,3 +104,10 @@ export const getSnapsByUsername = async (
     next(error);
   }
 }
+
+const validateUsername = (username: string | undefined) => {
+  if (!username) {
+    throw new ValidationError('username', 'Username required!');
+  }
+};
+
