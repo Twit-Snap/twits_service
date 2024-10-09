@@ -35,7 +35,10 @@ describe('Snap API', () => {
             name: 'Test User 1',
             username: 'testuser1'
           },
-          content: 'Test snap message'
+          content: 'Test snap message',
+          entities: {
+            hashtags: []
+          }
         })
         .expect(201);
 
@@ -62,7 +65,10 @@ describe('Snap API', () => {
             name: 'Test User 1',
             username: 'testuser1'
           },
-          content: 'a'.repeat(281)
+          content: 'a'.repeat(281),
+          entities: {
+            hashtags: []
+          }
         })
         .expect(400);
 

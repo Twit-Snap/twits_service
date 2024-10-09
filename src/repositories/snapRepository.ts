@@ -1,17 +1,18 @@
 import { RootFilterQuery } from 'mongoose';
 import { NotFoundError, ValidationError } from '../types/customErrors';
-import { SnapResponse, TwitUser } from '../types/types';
+import { SnapResponse, TwitUser, Entities } from '../types/types';
 import { UUID } from '../utils/uuid';
 import TwitSnap, { ISnapModel } from './models/Snap';
 
 export interface ISnapRepository {
-  create(message: string, user: TwitUser): Promise<SnapResponse>;
   findAll(
     createdAt: string | undefined,
     limit: number | undefined,
     older: boolean
   ): Promise<SnapResponse[]>;
+  create(message: string, user: TwitUser, entities: Entities): Promise<SnapResponse>;
   findById(id: string): Promise<SnapResponse>;
+  findByHashtag(hashtag: string): Promise<SnapResponse[]>;
   deleteById(id: string): Promise<void>;
   findByUsersIds(
     usersIds: number[],
@@ -19,14 +20,16 @@ export interface ISnapRepository {
     limit: number | undefined,
     older: boolean
   ): Promise<SnapResponse[]>;
+  findByUsername(username: string): Promise<SnapResponse[]>;
 }
 
 export class SnapRepository implements ISnapRepository {
-  async create(content: string, user: TwitUser): Promise<SnapResponse> {
+  async create(content: string, user: TwitUser, entities: Entities): Promise<SnapResponse> {
     const snap = new TwitSnap({
       _id: UUID.generate(),
       content,
       user,
+      entities,
       createdAt: new Date().toISOString()
     });
     const savedSnap = await snap.save();
@@ -109,6 +112,26 @@ export class SnapRepository implements ISnapRepository {
       .sort({ createdAt: -1 })
       .limit(limit ? limit : 20);
 
+    return snaps.map(snap => ({
+      id: snap._id,
+      user: snap.user,
+      content: snap.content,
+      createdAt: snap.createdAt
+    }));
+  }
+
+  async findByHashtag(hashtag: string): Promise<SnapResponse[]> {
+    const snaps = await TwitSnap.find({ 'entities.hashtags.text': `#${hashtag}` }).sort({ createdAt: -1 });
+    return snaps.map(snap => ({
+      id: snap._id,
+      user: snap.user,
+      content: snap.content,
+      createdAt: snap.createdAt
+    }));
+  }
+
+  async findByUsername(username: string): Promise<SnapResponse[]> {
+    const snaps = await TwitSnap.find({ 'user.username': { $in: username  } }).sort({ createdAt: -1 });
     return snaps.map(snap => ({
       id: snap._id,
       user: snap.user,
