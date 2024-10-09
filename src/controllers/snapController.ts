@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { ISnapRepository, SnapRepository } from '../repositories/snapRepository';
 import {SnapResponse, CreateSnapBody, TwitUser, Entities, Hashtag} from '../types/types';
 import { ValidationError } from '../types/customErrors';
@@ -21,7 +21,10 @@ export const createSnap = async (
       throw new ValidationError(content, 'The TwitSnap content is required.');
     }
     if (content.length > 280) {
-      throw new ValidationError(content, 'The content of the TwitSnap must not exceed 280 characters.');
+      throw new ValidationError(
+        content,
+        'The content of the TwitSnap must not exceed 280 characters.'
+      );
     }
     let user: TwitUser = {
       userId: req.body.authorId,
@@ -89,3 +92,38 @@ export const getSnapsByHashtag = async (
     }
 };
 
+export const getSnapsByUsersIds = async (
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { usersIds } = req.body;
+
+    if (!usersIds) {
+      throw new ValidationError('usersId', 'Users IDs required!');
+    }
+
+    const snaps: SnapResponse[] = await snapRepository.findByUsersIds(usersIds);
+    res.status(200).json({ data: snaps });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getSnapsByUsername = async (
+  req: Request<{ username: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { username } = req.params;
+    if (!username) {
+      throw new ValidationError('username', 'Username required!');
+    }
+    const snaps: SnapResponse[] = await snapRepository.findByUsername(username);
+    res.status(200).json({ data: snaps });
+  } catch (error) {
+    next(error);
+  }
+};

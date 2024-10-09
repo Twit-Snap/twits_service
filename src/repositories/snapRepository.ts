@@ -1,7 +1,7 @@
-import { SnapResponse, TwitUser, Entities } from '../types/types';
 import { NotFoundError, ValidationError } from '../types/customErrors';
-import TwitSnap from './models/Snap';
+import { SnapResponse, TwitUser, Entities } from '../types/types';
 import { UUID } from '../utils/uuid';
+import TwitSnap from './models/Snap';
 
 export interface ISnapRepository {
   create(message: string, user: TwitUser, entities: Entities): Promise<SnapResponse>;
@@ -9,6 +9,8 @@ export interface ISnapRepository {
   findById(id: string): Promise<SnapResponse>;
   findByHashtag(hashtag: string): Promise<SnapResponse[]>;
   deleteById(id: string): Promise<void>;
+  findByUsersIds(usersIds: number[]): Promise<SnapResponse[]>;
+  findByUsername(username: string): Promise<SnapResponse[]>;
 }
 
 export class SnapRepository implements ISnapRepository {
@@ -67,6 +69,26 @@ export class SnapRepository implements ISnapRepository {
 
   async findByHashtag(hashtag: string): Promise<SnapResponse[]> {
     const snaps = await TwitSnap.find({ 'entities.hashtags.text': `#${hashtag}` }).sort({ createdAt: -1 });
+    return snaps.map(snap => ({
+      id: snap._id,
+      user: snap.user,
+      content: snap.content,
+      createdAt: snap.createdAt
+    }));
+  }
+  async findByUsersIds(usersIds: number[]): Promise<SnapResponse[]> {
+    const snaps = await TwitSnap.find({ 'user.userId': { $in: usersIds } }).sort({ createdAt: -1 });
+
+    return snaps.map(snap => ({
+      id: snap._id,
+      user: snap.user,
+      content: snap.content,
+      createdAt: snap.createdAt
+    }));
+  }
+
+  async findByUsername(username: string): Promise<SnapResponse[]> {
+    const snaps = await TwitSnap.find({ 'user.username': { $in: username  } }).sort({ createdAt: -1 });
     return snaps.map(snap => ({
       id: snap._id,
       user: snap.user,
