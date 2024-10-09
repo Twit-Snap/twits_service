@@ -21,6 +21,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: apt-get update && apt-get install docker docker-compose -y
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
