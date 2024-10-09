@@ -1,9 +1,14 @@
 import { NextFunction, Request, Response } from 'express';
 import { ISnapRepository, SnapRepository } from '../repositories/snapRepository';
+import {SnapResponse, CreateSnapBody, TwitUser, Entities, Hashtag} from '../types/types';
 import { ValidationError } from '../types/customErrors';
-import { CreateSnapBody, SnapResponse, TwitUser } from '../types/types';
 
 const snapRepository: ISnapRepository = new SnapRepository();
+
+function extractHashTags(content: string): Hashtag[] {
+    const hashTags = content.match(/#\w+/g);
+    return hashTags ? hashTags.map(tag => ({ text: tag })) : [];
+}
 
 export const createSnap = async (
   req: Request<{}, {}, CreateSnapBody>,
@@ -25,8 +30,11 @@ export const createSnap = async (
       userId: req.body.authorId,
       name: req.body.authorName,
       username: req.body.authorUsername
-    };
-    const savedSnap: SnapResponse = await snapRepository.create(content, user);
+    }
+    let entities: Entities = {
+      hashtags: extractHashTags(req.body.content)
+    }
+    const savedSnap: SnapResponse = await snapRepository.create(content, user, entities);
     res.status(201).json({ data: savedSnap });
   } catch (error) {
     next(error);
@@ -68,6 +76,20 @@ export const deleteSnapById = async (
   } catch (error) {
     next(error);
   }
+};
+
+export const getSnapsByHashtag = async (
+    req: Request<{ hashtag: string }>,
+    res: Response,
+    next: NextFunction
+    ) => {
+    try {
+        const { hashtag } = req.params;
+        const snaps: SnapResponse[] = await snapRepository.findByHashtag(hashtag);
+        res.status(200).json({ data: snaps });
+    } catch (error) {
+        next(error);
+    }
 };
 
 export const getSnapsByUsersIds = async (

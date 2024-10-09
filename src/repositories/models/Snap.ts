@@ -9,6 +9,9 @@ export interface ISnapModel extends Document {
     name: string;
     username: string;
   };
+  entities: {
+    hashtags: { text: string }[];
+  }
   content: string;
 }
 
@@ -21,6 +24,9 @@ const TwitSnapSchema: Schema = new Schema(
       name: { type: String, required: true },
       username: { type: String, required: true }
     },
+    entities: {
+      hashtags: [{ text: { type: String } }]
+    }
   },
   { timestamps: true }
 );
