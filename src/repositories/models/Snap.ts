@@ -11,7 +11,7 @@ export interface ISnapModel extends Document {
   };
   entities: {
     hashtags: { text: string }[];
-  }
+  };
   content: string;
 }
 

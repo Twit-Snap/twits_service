@@ -1,13 +1,15 @@
 import { NextFunction, Request, Response } from 'express';
 import { ISnapRepository, SnapRepository } from '../repositories/snapRepository';
-import {SnapResponse, CreateSnapBody, TwitUser, Entities, Hashtag} from '../types/types';
+import { ISnapService, SnapService } from '../service/snapService';
+import { SnapResponse, CreateSnapBody, TwitUser, Entities, Hashtag } from '../types/types';
 import { ValidationError } from '../types/customErrors';
 
 const snapRepository: ISnapRepository = new SnapRepository();
+const snapService: ISnapService = new SnapService();
 
 function extractHashTags(content: string): Hashtag[] {
-    const hashTags = content.match(/#\w+/g);
-    return hashTags ? hashTags.map(tag => ({ text: tag })) : [];
+  const hashTags = content.match(/#\w+/g);
+  return hashTags ? hashTags.map(tag => ({ text: tag })) : [];
 }
 
 export const createSnap = async (
@@ -30,10 +32,10 @@ export const createSnap = async (
       userId: req.body.authorId,
       name: req.body.authorName,
       username: req.body.authorUsername
-    }
+    };
     let entities: Entities = {
       hashtags: extractHashTags(req.body.content)
-    }
+    };
     const savedSnap: SnapResponse = await snapRepository.create(content, user, entities);
     res.status(201).json({ data: savedSnap });
   } catch (error) {
@@ -43,7 +45,12 @@ export const createSnap = async (
 
 export const getAllSnaps = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const snaps: SnapResponse[] = await snapRepository.findAll();
+    const createdAt: string | undefined = req.query.createdAt?.toString();
+    const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
+    const older: boolean = req.query.older === 'true' ? true : false;
+
+    const snaps: SnapResponse[] = await snapRepository.findAll(createdAt, limit, older);
+
     res.status(200).json({ data: snaps });
   } catch (error) {
     next(error);
@@ -79,17 +86,17 @@ export const deleteSnapById = async (
 };
 
 export const getSnapsByHashtag = async (
-    req: Request<{ hashtag: string }>,
-    res: Response,
-    next: NextFunction
-    ) => {
-    try {
-        const { hashtag } = req.params;
-        const snaps: SnapResponse[] = await snapRepository.findByHashtag(hashtag);
-        res.status(200).json({ data: snaps });
-    } catch (error) {
-        next(error);
-    }
+  req: Request<{ hashtag: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { hashtag } = req.params;
+    const snaps: SnapResponse[] = await snapRepository.findByHashtag(hashtag);
+    res.status(200).json({ data: snaps });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getSnapsByUsersIds = async (
@@ -100,11 +107,18 @@ export const getSnapsByUsersIds = async (
   try {
     const { usersIds } = req.body;
 
-    if (!usersIds) {
-      throw new ValidationError('usersId', 'Users IDs required!');
-    }
+    const createdAt: string | undefined = req.query.createdAt?.toString();
+    const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
+    const older: boolean = req.query.older === 'true' ? true : false;
 
-    const snaps: SnapResponse[] = await snapRepository.findByUsersIds(usersIds);
+    snapService.validateUsersIds(usersIds);
+
+    const snaps: SnapResponse[] = await snapRepository.findByUsersIds(
+      usersIds,
+      createdAt,
+      limit,
+      older
+    );
     res.status(200).json({ data: snaps });
   } catch (error) {
     next(error);

@@ -30,7 +30,7 @@ describe('Snap API', () => {
       const response = await request(app)
         .post('/snaps')
         .send({
-          user : {
+          user: {
             userId: 1,
             name: 'Test User 1',
             username: 'testuser1'
@@ -60,7 +60,7 @@ describe('Snap API', () => {
       const response = await request(app)
         .post('/snaps')
         .send({
-          user : {
+          user: {
             userId: 1,
             name: 'Test User 1',
             username: 'testuser1'
@@ -75,7 +75,10 @@ describe('Snap API', () => {
       expect(response.body).toHaveProperty('type', 'about:blank');
       expect(response.body).toHaveProperty('title', 'Validation Error');
       expect(response.body).toHaveProperty('status', 400);
-      expect(response.body).toHaveProperty('detail', 'The content of the TwitSnap must not exceed 280 characters.');
+      expect(response.body).toHaveProperty(
+        'detail',
+        'The content of the TwitSnap must not exceed 280 characters.'
+      );
       expect(response.body).toHaveProperty('instance');
     });
   });

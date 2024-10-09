@@ -5,7 +5,8 @@
     "build": "tsc",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint .",
-    "test": "docker-compose up -d mongodb && jest"
+    "test": "docker-compose up -d mongodb && jest --maxWorkers=1 --coverage",
+    "ci-test": "docker-compose up -d mongodb && jest --no-cache --maxWorkers=1 --coverage --ci"
   },
   "name": "ingsw2_tp_individual",
   "version": "1.0.0",
@@ -55,6 +56,15 @@
       "jsx",
       "json",
       "node"
-    ]
+    ],
+    "collectCoverage": false,
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    }
   }
 }
