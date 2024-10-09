@@ -1,6 +1,6 @@
 import { RootFilterQuery } from 'mongoose';
 import { NotFoundError, ValidationError } from '../types/customErrors';
-import { SnapResponse, TwitUser, Entities } from '../types/types';
+import { Entities, SnapResponse, TwitUser } from '../types/types';
 import { UUID } from '../utils/uuid';
 import TwitSnap, { ISnapModel } from './models/Snap';
 
@@ -8,7 +8,8 @@ export interface ISnapRepository {
   findAll(
     createdAt: string | undefined,
     limit: number | undefined,
-    older: boolean
+    older: boolean,
+    has: string | undefined
   ): Promise<SnapResponse[]>;
   create(message: string, user: TwitUser, entities: Entities): Promise<SnapResponse>;
   findById(id: string): Promise<SnapResponse>;
@@ -44,9 +45,10 @@ export class SnapRepository implements ISnapRepository {
   async findAll(
     createdAt: string | undefined,
     limit: number | undefined,
-    older: boolean
+    older: boolean,
+    has: string | undefined
   ): Promise<SnapResponse[]> {
-    var filter: RootFilterQuery<ISnapModel> = {};
+    var filter: RootFilterQuery<ISnapModel> = { content: { $regex: has, $options: "miu" } };
 
     if (createdAt) {
       filter = {
