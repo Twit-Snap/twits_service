@@ -13,6 +13,12 @@ export type SnapResponse = {
   createdAt: string;
 };
 
+export type LikeResponse = {
+  userId: number;
+  twitId: string;
+  createdAt: string;
+};
+
 export type CreateSnapBody = {
   content: string;
   authorId: number;
