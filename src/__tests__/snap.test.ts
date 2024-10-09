@@ -360,6 +360,40 @@ describe('Snap API Tests', () => {
       ]);
     });
 
+    it("should not return items if no one has 'has' in his content", async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'hello Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app)
+        .get('/snaps/')
+        .query({ has: 'this-is-a-test' })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(0);
+    });
+
     it("should return items that have part of the word 'hello' ('hel') in his content case insensitive", async () => {
       await TwitSnap.create({
         user: {
