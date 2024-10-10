@@ -57,6 +57,7 @@ describe('Snap API Tests', () => {
         .expect(201);
 
       expect(response.body.data.userId).toEqual(2);
+      expect(typeof response.body.data.userId).toBe('number');
       expect(response.body.data.twitId).toEqual(twit1ID);
       expect(response.body.data.createdAt).toBeDefined();
     });
