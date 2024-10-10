@@ -328,8 +328,8 @@ describe('Snap API Tests', () => {
 
       expect(response.body.data).toHaveLength(2);
       expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
-        'Test snap 1',
-        'Test snap 2'
+        'Test snap 2',
+        'Test snap 1'
       ]);
     });
 

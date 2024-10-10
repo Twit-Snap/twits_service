@@ -41,7 +41,7 @@ export class LikeRepository implements ILikeRepository {
   }
 
   async getLikesByUser(userId: number): Promise<SnapResponse[]> {
-    const likes = await Like.find({ userId: userId }).populate('twitId');
+    const likes = await Like.find({ userId: userId }).sort({ createdAt: -1 }).populate('twitId');
 
     const expandedLikes: SnapResponse[] = likes.map(like => {
       const twit: ISnapModel = like.twitId as unknown as ISnapModel;
