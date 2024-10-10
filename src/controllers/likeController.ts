@@ -59,3 +59,21 @@ export const removeLike = async (
     next(error);
   }
 };
+
+export const getLikesByUser = async (
+  req: Request<{ userId: number }>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    likeService.validateUserId(req.params.userId.toString());
+
+    const { userId } = req.params;
+
+    const data = await likeRepository.getLikesByUser(userId);
+
+    res.status(200).json({ data: data });
+  } catch (error) {
+    next(error);
+  }
+};

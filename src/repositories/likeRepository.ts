@@ -1,11 +1,13 @@
 import { NotFoundError } from '../types/customErrors';
-import { LikeResponse } from '../types/types';
+import { LikeResponse, SnapResponse } from '../types/types';
 import Like from './models/Like';
+import { ISnapModel } from './models/Snap';
 
 export interface ILikeRepository {
   add(userId: number, twitId: string): Promise<LikeResponse>;
   remove(userId: number, twitId: string): Promise<void>;
   getLikesByTwit(twitId: string): Promise<number>;
+  getLikesByUser(userId: number): Promise<SnapResponse[]>;
 }
 
 export class LikeRepository implements ILikeRepository {
@@ -36,5 +38,22 @@ export class LikeRepository implements ILikeRepository {
     const result = await Like.countDocuments({ twitId: twitId });
 
     return result;
+  }
+
+  async getLikesByUser(userId: number): Promise<SnapResponse[]> {
+    const likes = await Like.find({ userId: userId }).populate('twitId');
+
+    const expandedLikes: SnapResponse[] = likes.map(like => {
+      const twit: ISnapModel = like.twitId as unknown as ISnapModel;
+
+      return {
+        id: twit._id,
+        user: twit.user,
+        content: twit.content,
+        createdAt: twit.createdAt
+      };
+    });
+
+    return expandedLikes;
   }
 }
