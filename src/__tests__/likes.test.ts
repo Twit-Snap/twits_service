@@ -3,6 +3,7 @@ import request from 'supertest';
 import app from '../app';
 import Like from '../repositories/models/Like';
 import TwitSnap from '../repositories/models/Snap';
+import { SnapResponse } from '../types/types';
 
 describe('Snap API Tests', () => {
   var twit1ID: string | undefined = undefined;
@@ -249,7 +250,7 @@ describe('Snap API Tests', () => {
     });
   });
 
-  describe('/likes/:twitId', () => {
+  describe('/likes/twits/:twitId', () => {
     it('should return the number of likes for a twit', async () => {
       await Like.create({
         userId: 1,
@@ -266,7 +267,7 @@ describe('Snap API Tests', () => {
         twitId: twit2ID
       });
 
-      const response = await request(app).get(`/likes/${twit1ID}`).expect(200);
+      const response = await request(app).get(`/likes/twits/${twit1ID}`).expect(200);
       expect(response.body.data).toEqual(2);
     });
 
@@ -286,17 +287,84 @@ describe('Snap API Tests', () => {
         twitId: twit2ID
       });
 
-      const response = await request(app).get(`/likes/${twit3ID}`).expect(200);
+      const response = await request(app).get(`/likes/twits/${twit3ID}`).expect(200);
       expect(response.body.data).toEqual(0);
     });
 
     it('should raise an error if twitId is not an UUID', async () => {
-      const response = await request(app).get(`/likes/twit1ID`).expect(400);
+      const response = await request(app).get(`/likes/twits/twit1ID`).expect(400);
 
       expect(response.body).toEqual({
         'custom-field': 'twitId',
         detail: 'Invalid UUID',
-        instance: '/likes/twit1ID',
+        instance: '/likes/twits/twit1ID',
+        status: 400,
+        title: 'Validation Error',
+        type: 'about:blank'
+      });
+    });
+  });
+
+  describe('likes/users/:userId', () => {
+    it('should return all the likes that the user has', async () => {
+      await Like.create({
+        userId: 1,
+        twitId: twit1ID
+      });
+
+      await Like.create({
+        userId: 2,
+        twitId: twit1ID
+      });
+
+      await Like.create({
+        userId: 2,
+        twitId: twit2ID
+      });
+
+      const user_id = 2;
+
+      const response = await request(app).get(`/likes/users/${user_id}`).expect(200);
+
+      expect(response.body.data).toHaveLength(2);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'Test snap 1',
+        'Test snap 2'
+      ]);
+    });
+
+    it('should not return any twits if the user has not liked any of them', async () => {
+      await Like.create({
+        userId: 1,
+        twitId: twit1ID
+      });
+
+      await Like.create({
+        userId: 2,
+        twitId: twit1ID
+      });
+
+      await Like.create({
+        userId: 2,
+        twitId: twit2ID
+      });
+
+      const user_id = 3;
+
+      const response = await request(app).get(`/likes/users/${user_id}`).expect(200);
+
+      expect(response.body.data).toHaveLength(0);
+    });
+
+    it('should raise an error if userId is not numeric', async () => {
+      const user_id = 'jelou';
+
+      const response = await request(app).get(`/likes/users/${user_id}`).expect(400);
+
+      expect(response.body).toEqual({
+        'custom-field': 'userId',
+        detail: 'Invalid user ID, must be a number',
+        instance: '/likes/users/jelou',
         status: 400,
         title: 'Validation Error',
         type: 'about:blank'
