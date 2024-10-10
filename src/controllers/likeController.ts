@@ -34,7 +34,7 @@ export const addLike = async (
 
     const { userId, twitId } = req.body;
 
-    const data = await likeRepository.add(userId, twitId);
+    const data = await likeRepository.add(+userId, twitId);
 
     res.status(201).json({ data: data });
   } catch (error) {
@@ -53,7 +53,7 @@ export const removeLike = async (
 
     const { userId, twitId } = req.body;
 
-    await likeRepository.remove(userId, twitId);
+    await likeRepository.remove(+userId, twitId);
     res.status(204).send();
   } catch (error) {
     next(error);
