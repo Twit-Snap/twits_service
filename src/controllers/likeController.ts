@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { LikeRepository } from '../repositories/likeRepository';
+import { SnapRepository } from '../repositories/snapRepository';
 import { LikeService } from '../service/likeService';
 
 const likeService = new LikeService();
@@ -14,6 +15,9 @@ export const getLikesByTwit = async (
     likeService.validateTwitId(req.params.twitId);
 
     const { twitId } = req.params;
+
+    //Twit exist?
+    await new SnapRepository().findById(twitId);
 
     const data = await likeRepository.getLikesByTwit(twitId);
 
@@ -34,6 +38,9 @@ export const addLike = async (
 
     const { userId, twitId } = req.body;
 
+    //Twit exist?
+    await new SnapRepository().findById(twitId);
+
     const data = await likeRepository.add(+userId, twitId);
 
     res.status(201).json({ data: data });
@@ -52,6 +59,9 @@ export const removeLike = async (
     likeService.validateUserId(req.body.userId);
 
     const { userId, twitId } = req.body;
+
+    //Twit exist?
+    await new SnapRepository().findById(twitId);
 
     await likeRepository.remove(+userId, twitId);
     res.status(204).send();

@@ -142,6 +142,23 @@ describe('Snap API Tests', () => {
         type: 'about:blank'
       });
     });
+
+    it('should raise an error if the twit does not exist', async () => {
+      const twit_id = 'd727a1de-d248-4c50-8647-5512a87f6488';
+
+      const response = await request(app)
+        .post(`/likes/`)
+        .send({ userId: 2, twitId: twit_id })
+        .expect(404);
+
+      expect(response.body).toEqual({
+        detail: `The Snap with ID ${twit_id} was not found.`,
+        instance: `/likes/`,
+        status: 404,
+        title: 'Snap Not Found',
+        type: 'about:blank'
+      });
+    });
   });
 
   describe('DELETE /likes', () => {
@@ -248,6 +265,23 @@ describe('Snap API Tests', () => {
         type: 'about:blank'
       });
     });
+
+    it('should raise an error if the twit does not exist', async () => {
+      const twit_id = 'd727a1de-d248-4c50-8647-5512a87f6488';
+
+      const response = await request(app)
+        .delete(`/likes/`)
+        .send({ userId: 2, twitId: twit_id })
+        .expect(404);
+
+      expect(response.body).toEqual({
+        detail: `The Snap with ID ${twit_id} was not found.`,
+        instance: `/likes/`,
+        status: 404,
+        title: 'Snap Not Found',
+        type: 'about:blank'
+      });
+    });
   });
 
   describe('/likes/twits/:twitId', () => {
@@ -289,6 +323,19 @@ describe('Snap API Tests', () => {
 
       const response = await request(app).get(`/likes/twits/${twit3ID}`).expect(200);
       expect(response.body.data).toEqual(0);
+    });
+
+    it('should raise an error if the twit does not exist', async () => {
+      const twit_id = 'd727a1de-d248-4c50-8647-5512a87f6488';
+
+      const response = await request(app).get(`/likes/twits/${twit_id}`).expect(404);
+      expect(response.body).toEqual({
+        detail: `The Snap with ID ${twit_id} was not found.`,
+        instance: `/likes/twits/${twit_id}`,
+        status: 404,
+        title: 'Snap Not Found',
+        type: 'about:blank'
+      });
     });
 
     it('should raise an error if twitId is not an UUID', async () => {
