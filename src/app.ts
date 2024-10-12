@@ -1,12 +1,13 @@
+import dotenv from 'dotenv';
 import express from 'express';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import snapRoutes from './routes/snapRoutes';
-import hashtagsRoutes from './routes/hashtagsRoutes';
 import { errorHandler } from './middleware/errorHandler';
+import hashtagsRoutes from './routes/hashtagsRoutes';
+import snapRoutes from './routes/snapRoutes';
 import logger from './utils/logger';
 
 dotenv.config();
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const cors = require('cors');
 const app = express();
 
