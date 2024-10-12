@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import { ISnapRepository, SnapRepository } from '../repositories/snapRepository';
 import { ISnapService, SnapService } from '../service/snapService';
-import { SnapResponse, CreateSnapBody, TwitUser, Entities, Hashtag } from '../types/types';
 import { ValidationError } from '../types/customErrors';
+import { CreateSnapBody, Entities, Hashtag, SnapResponse, TwitUser } from '../types/types';
 
 const snapRepository: ISnapRepository = new SnapRepository();
 const snapService: ISnapService = new SnapService();
@@ -48,8 +48,9 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     const createdAt: string | undefined = req.query.createdAt?.toString();
     const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
     const older: boolean = req.query.older === 'true' ? true : false;
+    const has: string = req.query.has ? req.query.has.toString() : '';
 
-    const snaps: SnapResponse[] = await snapRepository.findAll(createdAt, limit, older);
+    const snaps: SnapResponse[] = await snapRepository.findAll(createdAt, limit, older, has);
 
     res.status(200).json({ data: snaps });
   } catch (error) {
