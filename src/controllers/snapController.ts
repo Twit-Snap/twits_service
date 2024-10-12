@@ -1,8 +1,16 @@
 import { NextFunction, Request, Response } from 'express';
 import { ISnapRepository, SnapRepository } from '../repositories/snapRepository';
 import { ISnapService, SnapService } from '../service/snapService';
-import { SnapResponse, CreateSnapBody, TwitUser, Entities, Hashtag } from '../types/types';
+import {
+  SnapResponse,
+  CreateSnapBody,
+  TwitUser,
+  Entities,
+  Hashtag,
+  RankRequest
+} from '../types/types';
 import { ValidationError } from '../types/customErrors';
+import axios from 'axios';
 
 const snapRepository: ISnapRepository = new SnapRepository();
 const snapService: ISnapService = new SnapService();
@@ -43,15 +51,26 @@ export const createSnap = async (
   }
 };
 
-export const getAllSnaps = async (req: Request, res: Response, next: NextFunction) => {
+export const getSnaps = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const createdAt: string | undefined = req.query.createdAt?.toString();
     const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
     const older: boolean = req.query.older === 'true' ? true : false;
+    const username: string | undefined = req.query.username?.toString();
+    const rank: boolean = req.query.rank === 'true' ? true : false;
 
-    const snaps: SnapResponse[] = await snapRepository.findAll(createdAt, limit, older);
+    if (rank && username) {
+      const sample_snaps: SnapResponse[] = await snapRepository.findByUsername(username, createdAt, limit, older);
+      let sample_snaps_parsed : RankRequest = {data : sample_snaps.map(snap => {return {id: snap.id, content: snap.content}})};
+      const rank_result = await axios.post(`${process.env.FEED_ALGORITHM_URL}/rank`, sample_snaps_parsed);
+      rank_result.data.ranking.data = await Promise.all(rank_result.data.ranking.data.map(async (snap : SnapResponse) => await snapRepository.findById(snap.id)));
+      console.log("Fetched the following Tweets for user: " ,username, " --> ",  rank_result.data.ranking.data);
+      res.status(200).json({ data: rank_result.data.ranking.data});
+    } else {
+      const snaps: SnapResponse[] = await snapRepository.findAll(createdAt, limit, older);
+      res.status(200).json({ data: snaps });
+    }
 
-    res.status(200).json({ data: snaps });
   } catch (error) {
     next(error);
   }
@@ -147,4 +166,8 @@ export const getSnapsByUsername = async (
   } catch (error) {
     next(error);
   }
+};
+
+export const getAllSnaps = async (): Promise<SnapResponse[]> => {
+  return await snapRepository.findAll(undefined, undefined, false);
 };

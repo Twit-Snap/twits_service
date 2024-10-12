@@ -2,7 +2,7 @@ import express from 'express';
 import {
   createSnap,
   deleteSnapById,
-  getAllSnaps,
+  getSnaps,
   getSnapById,
   getSnapsByUsersIds,
   getSnapsByUsername
@@ -11,7 +11,7 @@ import {
 const router = express.Router();
 
 router.post('/', createSnap);
-router.get('/', getAllSnaps);
+router.get('/', getSnaps);
 router.get('/:id', getSnapById);
 router.get('/by_username/:username', getSnapsByUsername);
 router.delete('/:id', deleteSnapById);

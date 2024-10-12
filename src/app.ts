@@ -5,6 +5,11 @@ import snapRoutes from './routes/snapRoutes';
 import hashtagsRoutes from './routes/hashtagsRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import logger from './utils/logger';
+import {
+  getAllSnaps
+} from './controllers/snapController';
+import { SnapResponse, RankRequest } from './types/types';
+import axios from 'axios';
 
 dotenv.config();
 const cors = require('cors');
@@ -26,6 +31,21 @@ export const connectToMongoDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI as string);
     logger.info('Connected to MongoDB');
+
+    //Load all snaps to feed algorithm
+    const snaps: SnapResponse[] = await getAllSnaps();
+    const snapData : RankRequest = {
+      data:
+        snaps.map(snap => {
+          return {
+            id: snap.id,
+            content: snap.content,
+          };
+        })
+    };
+    await axios.post(`${process.env.FEED_ALGORITHM_URL}/`, snapData);
+    console.log('Snaps loaded to feed algorithm');
+
   } catch (err) {
     logger.error('MongoDB connection error:', err);
     process.exit(1);
