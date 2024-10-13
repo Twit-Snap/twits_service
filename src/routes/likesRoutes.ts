@@ -6,6 +6,6 @@ const router = express.Router();
 router.get('/twits/:twitId', getLikesByTwit);
 router.post('/', addLike);
 router.delete('/', removeLike);
-router.get('/users/:userId', getLikesByUser);
+router.get('/user/', getLikesByUser);
 
 export default router;
