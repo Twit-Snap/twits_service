@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import mongoose from 'mongoose';
 import { errorHandler } from './middleware/errorHandler';
+import { jwtMiddleware } from './middleware/jwtMiddleware';
 import hashtagsRoutes from './routes/hashtagsRoutes';
 import likeRoutes from './routes/likesRoutes';
 import snapRoutes from './routes/snapRoutes';
@@ -14,6 +15,7 @@ const app = express();
 //CORS middleware
 app.use(cors());
 app.use(express.json());
+app.use(jwtMiddleware);
 
 // Routes
 app.use('/snaps', snapRoutes);
