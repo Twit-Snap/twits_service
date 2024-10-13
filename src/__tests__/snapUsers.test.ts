@@ -3,6 +3,14 @@ import request from 'supertest';
 import app from '../app';
 import TwitSnap from '../repositories/models/Snap';
 import { SnapResponse } from '../types/types';
+import { JWTService } from '../service/jwtService';
+
+const auth = new JWTService().sign({
+  type: 'user',
+  email: 'test@test.com',
+  userId: 1,
+  username: 'test'
+});
 
 describe('Snap users related API Tests', () => {
   beforeAll(async () => {
@@ -22,7 +30,9 @@ describe('Snap users related API Tests', () => {
     it('should return an empty array when no snaps exist', async () => {
       const response = await request(app)
         .post('/snaps/by_users')
-        .send({ usersIds: [1] });
+        .send({ usersIds: [1] }).set({
+          Authorization: `Bearer ${auth}`
+        });;
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ data: [] });
@@ -56,7 +66,9 @@ describe('Snap users related API Tests', () => {
 
       const response = await request(app)
         .post('/snaps/by_users')
-        .send({ usersIds: [1] })
+        .send({ usersIds: [1] }).set({
+          Authorization: `Bearer ${auth}`
+        })
         .expect(200);
 
       expect(response.body.data).toHaveLength(2);
@@ -94,7 +106,9 @@ describe('Snap users related API Tests', () => {
 
       const response = await request(app)
         .post('/snaps/by_users')
-        .send({ usersIds: [1, 2, 3] })
+        .send({ usersIds: [1, 2, 3] }).set({
+          Authorization: `Bearer ${auth}`
+        })
         .expect(200);
 
       expect(response.body.data).toHaveLength(3);
@@ -106,7 +120,9 @@ describe('Snap users related API Tests', () => {
     });
 
     it('should return a status code of 400 when no body is specified', async () => {
-      const response = await request(app).post('/snaps/by_users');
+      const response = await request(app).post('/snaps/by_users').set({
+        Authorization: `Bearer ${auth}`
+      });;
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({
@@ -122,7 +138,9 @@ describe('Snap users related API Tests', () => {
     it('should return a status code of 400 when usersIds is not a list', async () => {
       const response = await request(app)
         .post('/snaps/by_users')
-        .send({ usersIds: { ids: [1, 2, 3] } });
+        .send({ usersIds: { ids: [1, 2, 3] } }).set({
+          Authorization: `Bearer ${auth}`
+        });;
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({
@@ -164,7 +182,9 @@ describe('Snap users related API Tests', () => {
       const response = await request(app)
         .post('/snaps/by_users')
         .send({ usersIds: [1, 2, 3] })
-        .query({ limit: 2 })
+        .query({ limit: 2 }).set({
+          Authorization: `Bearer ${auth}`
+        })
         .expect(200);
 
       expect(response.body.data).toHaveLength(2);
@@ -184,7 +204,9 @@ describe('Snap users related API Tests', () => {
 
       const response = await request(app)
         .post('/snaps/by_users')
-        .send({ usersIds: [1] })
+        .send({ usersIds: [1] }).set({
+          Authorization: `Bearer ${auth}`
+        })
         .expect(200);
 
       expect(response.body.data).toHaveLength(20);
@@ -219,7 +241,9 @@ describe('Snap users related API Tests', () => {
       const response = await request(app)
         .post('/snaps/by_users')
         .send({ usersIds: [1, 2, 3] })
-        .query({ createdAt: twit.createdAt })
+        .query({ createdAt: twit.createdAt }).set({
+          Authorization: `Bearer ${auth}`
+        })
         .expect(200);
 
       expect(response.body.data).toHaveLength(1);
@@ -255,7 +279,9 @@ describe('Snap users related API Tests', () => {
       const response = await request(app)
         .post('/snaps/by_users')
         .send({ usersIds: [1, 2, 3] })
-        .query({ createdAt: twit.createdAt, older: true })
+        .query({ createdAt: twit.createdAt, older: true }).set({
+          Authorization: `Bearer ${auth}`
+        })
         .expect(200);
 
       expect(response.body.data).toHaveLength(1);
@@ -291,7 +317,9 @@ describe('Snap users related API Tests', () => {
       const response = await request(app)
         .post('/snaps/by_users')
         .send({ usersIds: [1, 2, 3] })
-        .query({ createdAt: twit.createdAt, older: false })
+        .query({ createdAt: twit.createdAt, older: false }).set({
+          Authorization: `Bearer ${auth}`
+        })
         .expect(200);
 
       expect(response.body.data).toHaveLength(1);

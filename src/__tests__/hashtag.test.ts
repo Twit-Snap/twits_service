@@ -1,8 +1,16 @@
+import mongoose from 'mongoose';
 import request from 'supertest';
 import app from '../app';
-import mongoose from 'mongoose';
 import TwitSnap from '../repositories/models/Snap';
+import { JWTService } from '../service/jwtService';
 import { SnapResponse } from '../types/types';
+
+const auth = new JWTService().sign({
+  type: 'user',
+  email: 'test@test.com',
+  userId: 1,
+  username: 'test'
+});
 
 describe('Snap API Tests', () => {
   beforeAll(async () => {
@@ -20,7 +28,11 @@ describe('Snap API Tests', () => {
 
   describe('GET /hashtag/:hashtag', () => {
     it('should return an empty array when no snaps exist with said tag', async () => {
-      const response = await request(app).get('/hashtags/None');
+      const response = await request(app)
+        .get('/hashtags/None')
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ data: [] });
     });
@@ -39,7 +51,9 @@ describe('Snap API Tests', () => {
       }
     });
 
-    const response = await request(app).get('/hashtags/Test');
+    const response = await request(app).get('/hashtags/Test').set({
+      Authorization: `Bearer ${auth}`
+    });;
     expect(response.status).toBe(200);
     expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
       'Hello! Doing a #Test'
@@ -81,7 +95,9 @@ describe('Snap API Tests', () => {
       }
     });
 
-    const response = await request(app).get('/hashtags/Test');
+    const response = await request(app).get('/hashtags/Test').set({
+      Authorization: `Bearer ${auth}`
+    });;
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(3);
     expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([

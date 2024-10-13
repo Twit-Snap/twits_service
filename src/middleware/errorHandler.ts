@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import { NotFoundError, ValidationError } from '../types/customErrors';
+import { NextFunction, Request, Response } from 'express';
+import { AuthenticationError, NotFoundError, ValidationError } from '../types/customErrors';
 import logger from '../utils/logger';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -25,6 +25,15 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
       detail: err.detail,
       instance: req.originalUrl,
       'custom-field': err.field
+    });
+  } else if (err instanceof AuthenticationError) {
+    console.warn(`AuthenticationError: ${err.message}`);
+    res.status(401).json({
+      type: 'about:blank',
+      title: 'Unauthorized',
+      status: 401,
+      detail: 'Authentication error.',
+      instance: req.originalUrl
     });
   } else if (err instanceof Error) {
     logger.error(`Unexpected error: ${err.message}`, { stack: err.stack });
