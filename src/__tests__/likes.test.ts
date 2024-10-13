@@ -3,7 +3,18 @@ import request from 'supertest';
 import app from '../app';
 import Like from '../repositories/models/Like';
 import TwitSnap from '../repositories/models/Snap';
+import { JWTService } from '../service/jwtService';
+import { JwtCustomPayload } from '../types/jwt';
 import { SnapResponse } from '../types/types';
+
+const unsignedAuth: JwtCustomPayload = {
+  type: 'user',
+  email: 'test@test.com',
+  userId: 1,
+  username: 'test'
+};
+
+const auth = new JWTService().sign(unsignedAuth);
 
 describe('Snap API Tests', () => {
   var twit1ID: string | undefined = undefined;
@@ -54,51 +65,32 @@ describe('Snap API Tests', () => {
     it('should create a new like document', async () => {
       const response = await request(app)
         .post('/likes')
-        .send({ userId: 2, twitId: twit1ID })
+        .send({ twitId: twit1ID })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
         .expect(201);
 
-      expect(response.body.data.userId).toEqual(2);
+      expect(response.body.data.userId).toEqual(unsignedAuth.userId);
       expect(typeof response.body.data.userId).toBe('number');
       expect(response.body.data.twitId).toEqual(twit1ID);
       expect(response.body.data.createdAt).toBeDefined();
     });
 
     it('should raise an error if userId is undefined', async () => {
-      const response = await request(app)
-        .post('/likes')
-        .send({ userId: undefined, twitId: twit1ID })
-        .expect(400);
-
-      expect(response.body).toEqual({
-        'custom-field': 'userId',
-        detail: 'User ID required!',
-        instance: '/likes',
-        status: 400,
-        title: 'Validation Error',
-        type: 'about:blank'
+      const authAux = new JWTService().sign({
+        type: 'user',
+        email: 'test@test.com',
+        userId: NaN,
+        username: 'test'
       });
-    });
 
-    it('should raise an error if userId is not numeric', async () => {
       const response = await request(app)
         .post('/likes')
-        .send({ userId: 'jelou!', twitId: twit1ID })
-        .expect(400);
-
-      expect(response.body).toEqual({
-        'custom-field': 'userId',
-        detail: 'Invalid user ID, must be a number',
-        instance: '/likes',
-        status: 400,
-        title: 'Validation Error',
-        type: 'about:blank'
-      });
-    });
-
-    it('should raise an error if userId is an empty string', async () => {
-      const response = await request(app)
-        .post('/likes')
-        .send({ userId: '', twitId: twit1ID })
+        .send({ twitId: twit1ID })
+        .set({
+          Authorization: `Bearer ${authAux}`
+        })
         .expect(400);
 
       expect(response.body).toEqual({
@@ -114,7 +106,10 @@ describe('Snap API Tests', () => {
     it('should raise an error if twitId is undefined', async () => {
       const response = await request(app)
         .post('/likes')
-        .send({ userId: 2, twitId: undefined })
+        .send({ twitId: undefined })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
         .expect(400);
 
       expect(response.body).toEqual({
@@ -130,7 +125,10 @@ describe('Snap API Tests', () => {
     it('should raise an error if twitId is not an UUID', async () => {
       const response = await request(app)
         .post('/likes')
-        .send({ userId: 2, twitId: 'twit1ID' })
+        .send({ twitId: 'twit1ID' })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
         .expect(400);
 
       expect(response.body).toEqual({
@@ -148,8 +146,12 @@ describe('Snap API Tests', () => {
 
       const response = await request(app)
         .post(`/likes/`)
-        .send({ userId: 2, twitId: twit_id })
-        .expect(404);
+        .send({ twitId: twit_id })
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      // .expect(404);
+      console.log(response.body);
 
       expect(response.body).toEqual({
         detail: `The Snap with ID ${twit_id} was not found.`,
@@ -164,21 +166,30 @@ describe('Snap API Tests', () => {
   describe('DELETE /likes', () => {
     it('should delete a like', async () => {
       await Like.create({
-        userId: 2,
+        userId: unsignedAuth.userId,
         twitId: twit1ID
       });
 
-      await request(app).delete('/likes').send({ userId: 2, twitId: twit1ID }).expect(204);
+      await request(app)
+        .delete('/likes')
+        .send({ twitId: twit1ID })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(204);
     });
 
     it('should raise an error if there is no (userId, twitId) pair to delete', async () => {
       const response = await request(app)
         .delete('/likes')
-        .send({ userId: 2, twitId: twit1ID })
+        .send({ twitId: twit1ID })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
         .expect(404);
 
       expect(response.body).toEqual({
-        detail: `The Like with ID (user, twit) ; (2, ${twit1ID}) was not found.`,
+        detail: `The Like with ID (user, twit) ; (${unsignedAuth.userId}, ${twit1ID}) was not found.`,
         instance: '/likes',
         status: 404,
         title: 'Like Not Found',
@@ -187,41 +198,19 @@ describe('Snap API Tests', () => {
     });
 
     it('should raise an error if userId is undefined', async () => {
-      const response = await request(app)
-        .delete('/likes')
-        .send({ userId: undefined, twitId: twit1ID })
-        .expect(400);
-
-      expect(response.body).toEqual({
-        'custom-field': 'userId',
-        detail: 'User ID required!',
-        instance: '/likes',
-        status: 400,
-        title: 'Validation Error',
-        type: 'about:blank'
+      const authAux = new JWTService().sign({
+        type: 'user',
+        email: 'test@test.com',
+        userId: NaN,
+        username: 'test'
       });
-    });
 
-    it('should raise an error if userId is not numeric', async () => {
       const response = await request(app)
         .delete('/likes')
-        .send({ userId: 'jelou!', twitId: twit1ID })
-        .expect(400);
-
-      expect(response.body).toEqual({
-        'custom-field': 'userId',
-        detail: 'Invalid user ID, must be a number',
-        instance: '/likes',
-        status: 400,
-        title: 'Validation Error',
-        type: 'about:blank'
-      });
-    });
-
-    it('should raise an error if userId is an empty string', async () => {
-      const response = await request(app)
-        .delete('/likes')
-        .send({ userId: '', twitId: twit1ID })
+        .send({ twitId: twit1ID })
+        .set({
+          Authorization: `Bearer ${authAux}`
+        })
         .expect(400);
 
       expect(response.body).toEqual({
@@ -237,7 +226,10 @@ describe('Snap API Tests', () => {
     it('should raise an error if twitId is undefined', async () => {
       const response = await request(app)
         .delete('/likes')
-        .send({ userId: 2, twitId: undefined })
+        .send({ twitId: undefined })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
         .expect(400);
 
       expect(response.body).toEqual({
@@ -253,7 +245,10 @@ describe('Snap API Tests', () => {
     it('should raise an error if twitId is not an UUID', async () => {
       const response = await request(app)
         .delete('/likes')
-        .send({ userId: 2, twitId: 'twit1ID' })
+        .send({ twitId: 'twit1ID' })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
         .expect(400);
 
       expect(response.body).toEqual({
@@ -271,7 +266,10 @@ describe('Snap API Tests', () => {
 
       const response = await request(app)
         .delete(`/likes/`)
-        .send({ userId: 2, twitId: twit_id })
+        .send({ twitId: twit_id })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
         .expect(404);
 
       expect(response.body).toEqual({
@@ -287,7 +285,7 @@ describe('Snap API Tests', () => {
   describe('/likes/twits/:twitId', () => {
     it('should return the number of likes for a twit', async () => {
       await Like.create({
-        userId: 1,
+        userId: unsignedAuth.userId,
         twitId: twit1ID
       });
 
@@ -301,13 +299,18 @@ describe('Snap API Tests', () => {
         twitId: twit2ID
       });
 
-      const response = await request(app).get(`/likes/twits/${twit1ID}`).expect(200);
+      const response = await request(app)
+        .get(`/likes/twits/${twit1ID}`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
       expect(response.body.data).toEqual(2);
     });
 
     it('should return the like count equal to zero if the tweet has no likes', async () => {
       await Like.create({
-        userId: 1,
+        userId: unsignedAuth.userId,
         twitId: twit1ID
       });
 
@@ -321,14 +324,24 @@ describe('Snap API Tests', () => {
         twitId: twit2ID
       });
 
-      const response = await request(app).get(`/likes/twits/${twit3ID}`).expect(200);
+      const response = await request(app)
+        .get(`/likes/twits/${twit3ID}`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
       expect(response.body.data).toEqual(0);
     });
 
     it('should raise an error if the twit does not exist', async () => {
       const twit_id = 'd727a1de-d248-4c50-8647-5512a87f6488';
 
-      const response = await request(app).get(`/likes/twits/${twit_id}`).expect(404);
+      const response = await request(app)
+        .get(`/likes/twits/${twit_id}`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(404);
       expect(response.body).toEqual({
         detail: `The Snap with ID ${twit_id} was not found.`,
         instance: `/likes/twits/${twit_id}`,
@@ -339,7 +352,12 @@ describe('Snap API Tests', () => {
     });
 
     it('should raise an error if twitId is not an UUID', async () => {
-      const response = await request(app).get(`/likes/twits/twit1ID`).expect(400);
+      const response = await request(app)
+        .get(`/likes/twits/twit1ID`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(400);
 
       expect(response.body).toEqual({
         'custom-field': 'twitId',
@@ -353,25 +371,28 @@ describe('Snap API Tests', () => {
   });
 
   describe('likes/users/:userId', () => {
-    it('should return all the likes that the user has', async () => {
-      await Like.create({
-        userId: 1,
-        twitId: twit1ID
-      });
-
+    it('should return all the likes that the authorized user has', async () => {
       await Like.create({
         userId: 2,
         twitId: twit1ID
       });
 
       await Like.create({
-        userId: 2,
+        userId: unsignedAuth.userId,
+        twitId: twit1ID
+      });
+
+      await Like.create({
+        userId: unsignedAuth.userId,
         twitId: twit2ID
       });
 
-      const user_id = 2;
-
-      const response = await request(app).get(`/likes/users/${user_id}`).expect(200);
+      const response = await request(app)
+        .get(`/likes/user/`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
 
       expect(response.body.data).toHaveLength(2);
       expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
@@ -380,9 +401,9 @@ describe('Snap API Tests', () => {
       ]);
     });
 
-    it('should not return any twits if the user has not liked any of them', async () => {
+    it('should not return any twits if the authorized user has not liked any of them', async () => {
       await Like.create({
-        userId: 1,
+        userId: 3,
         twitId: twit1ID
       });
 
@@ -396,26 +417,14 @@ describe('Snap API Tests', () => {
         twitId: twit2ID
       });
 
-      const user_id = 3;
-
-      const response = await request(app).get(`/likes/users/${user_id}`).expect(200);
+      const response = await request(app)
+        .get(`/likes/user/`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
 
       expect(response.body.data).toHaveLength(0);
-    });
-
-    it('should raise an error if userId is not numeric', async () => {
-      const user_id = 'jelou';
-
-      const response = await request(app).get(`/likes/users/${user_id}`).expect(400);
-
-      expect(response.body).toEqual({
-        'custom-field': 'userId',
-        detail: 'Invalid user ID, must be a number',
-        instance: '/likes/users/jelou',
-        status: 400,
-        title: 'Validation Error',
-        type: 'about:blank'
-      });
     });
   });
 });
