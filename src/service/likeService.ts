@@ -3,7 +3,7 @@ import { UUID } from '../utils/uuid';
 
 export interface ILikeService {
   validateTwitId(twitId: string): void;
-  validateUserId(userId: string): void;
+  validateUserId(userId: number): void;
 }
 
 export class LikeService implements ILikeService {
@@ -17,14 +17,9 @@ export class LikeService implements ILikeService {
     }
   }
 
-  validateUserId(userId: string) {
-    if (!userId || userId === '') {
+  validateUserId(userId: number) {
+    if (!userId) {
       throw new ValidationError('userId', 'User ID required!');
-    }
-
-    // Not numeric string check
-    if (isNaN(+userId)) {
-      throw new ValidationError('userId', 'Invalid user ID, must be a number');
     }
   }
 }

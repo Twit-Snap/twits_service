@@ -28,20 +28,23 @@ export const getLikesByTwit = async (
 };
 
 export const addLike = async (
-  req: Request<{ userId: number; twitId: string }>,
+  req: Request<{ twitId: string }>,
   res: Response,
   next: NextFunction
 ) => {
   try {
     likeService.validateTwitId(req.body.twitId);
-    likeService.validateUserId(req.body.userId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = (req as any).user;
 
-    const { userId, twitId } = req.body;
+    likeService.validateUserId(user.userId);
+
+    const { twitId } = req.body;
 
     //Twit exist?
     await new SnapRepository().findById(twitId);
 
-    const data = await likeRepository.add(+userId, twitId);
+    const data = await likeRepository.add(user.userId, twitId);
 
     res.status(201).json({ data: data });
   } catch (error) {
@@ -50,37 +53,37 @@ export const addLike = async (
 };
 
 export const removeLike = async (
-  req: Request<{ userId: number; twitId: string }>,
+  req: Request<{ twitId: string }>,
   res: Response,
   next: NextFunction
 ) => {
   try {
     likeService.validateTwitId(req.body.twitId);
-    likeService.validateUserId(req.body.userId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = (req as any).user;
 
-    const { userId, twitId } = req.body;
+    likeService.validateUserId(user.userId);
+
+    const { twitId } = req.body;
 
     //Twit exist?
     await new SnapRepository().findById(twitId);
 
-    await likeRepository.remove(+userId, twitId);
+    await likeRepository.remove(user.userId, twitId);
     res.status(204).send();
   } catch (error) {
     next(error);
   }
 };
 
-export const getLikesByUser = async (
-  req: Request<{ userId: number }>,
-  res: Response,
-  next: NextFunction
-) => {
+export const getLikesByUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    likeService.validateUserId(req.params.userId.toString());
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = (req as any).user;
 
-    const { userId } = req.params;
+    likeService.validateUserId(user.userId);
 
-    const data = await likeRepository.getLikesByUser(userId);
+    const data = await likeRepository.getLikesByUser(user.userId);
 
     res.status(200).json({ data: data });
   } catch (error) {
