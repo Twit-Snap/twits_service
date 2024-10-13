@@ -50,12 +50,13 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     const createdAt: string | undefined = req.query.createdAt?.toString();
     const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
     const older: boolean = req.query.older === 'true' ? true : false;
+    const has: string = req.query.has ? req.query.has.toString() : '';
 
     const user = (req as any).user;
 
     new LikeService().validateUserId(user.userId);
 
-    const snaps: SnapResponse[] = await snapRepository.findAll(createdAt, limit, older);
+    const snaps: SnapResponse[] = await snapRepository.findAll(createdAt, limit, older, has);
     const snapsInteractions = await Promise.all(
       snaps.map(async twit => ({
         ...twit,
@@ -145,10 +146,21 @@ export const getSnapsByUsername = async (
 ) => {
   try {
     const { username } = req.params;
+
     if (!username) {
       throw new ValidationError('username', 'Username required!');
     }
-    const snaps: SnapResponse[] = await snapRepository.findByUsername(username);
+
+    const createdAt: string | undefined = req.query.createdAt?.toString();
+    const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
+    const older: boolean = req.query.older === 'true' ? true : false;
+
+    const snaps: SnapResponse[] = await snapRepository.findByUsername(
+      username,
+      createdAt,
+      limit,
+      older
+    );
     res.status(200).json({ data: snaps });
   } catch (error) {
     next(error);

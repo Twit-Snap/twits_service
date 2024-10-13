@@ -8,7 +8,8 @@ export interface ISnapRepository {
   findAll(
     createdAt: string | undefined,
     limit: number | undefined,
-    older: boolean
+    older: boolean,
+    has: string | undefined
   ): Promise<SnapResponse[]>;
   create(message: string, user: TwitUser, entities: Entities): Promise<SnapResponse>;
   findById(id: string): Promise<SnapResponse>;
@@ -20,7 +21,7 @@ export interface ISnapRepository {
     limit: number | undefined,
     older: boolean
   ): Promise<SnapResponse[]>;
-  findByUsername(username: string): Promise<SnapResponse[]>;
+  findByUsername(username: string, createdAt: string | undefined, limit: number | undefined, older: boolean): Promise<SnapResponse[]>;
 }
 
 export class SnapRepository implements ISnapRepository {
@@ -44,9 +45,10 @@ export class SnapRepository implements ISnapRepository {
   async findAll(
     createdAt: string | undefined,
     limit: number | undefined,
-    older: boolean
+    older: boolean,
+    has: string | undefined
   ): Promise<SnapResponse[]> {
-    var filter: RootFilterQuery<ISnapModel> = {};
+    var filter: RootFilterQuery<ISnapModel> = { content: { $regex: has, $options: "miu" } };
 
     if (createdAt) {
       filter = {
@@ -132,10 +134,22 @@ export class SnapRepository implements ISnapRepository {
     }));
   }
 
-  async findByUsername(username: string): Promise<SnapResponse[]> {
-    const snaps = await TwitSnap.find({ 'user.username': { $in: username } }).sort({
-      createdAt: -1
-    });
+  async findByUsername(username: string, createdAt: string | undefined, limit: number | undefined, older: boolean): Promise<SnapResponse[]> {
+
+    var filter: RootFilterQuery<ISnapModel> = {  'user.username': { $in: username } };
+
+    if (createdAt) {
+      filter = {
+        ...filter,
+        createdAt: older ? { $lt: createdAt } : { $gt: createdAt }
+      };
+    }
+
+    const snaps = await TwitSnap.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(limit ? limit : 20);
+
+
     return snaps.map(snap => ({
       id: snap._id,
       user: snap.user,

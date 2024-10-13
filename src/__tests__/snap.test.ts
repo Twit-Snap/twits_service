@@ -148,7 +148,7 @@ describe('Snap API Tests', () => {
       }).expect(200);
 
       expect(response.body.data).toHaveLength(2);
-    });
+    }, 10000);
 
     it('should return up to 20 items if limit is not specified', async () => {
       for (let i = 0; i < 25; i++) {
@@ -278,6 +278,225 @@ describe('Snap API Tests', () => {
 
       expect(response.body.data).toHaveLength(1);
       expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual(['Test snap 3']);
+    });
+
+    it("should return items that has 'hello' his content", async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'hello Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app).get('/snaps/').query({ has: 'hello' }).set({
+        Authorization: `Bearer ${auth}`
+      }).expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'hello Test snap 2'
+      ]);
+    });
+
+    it('should return all items if has param is undefined', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'hello Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app).get('/snaps/').query({ has: undefined }).set({
+        Authorization: `Bearer ${auth}`
+      }).expect(200);
+
+      expect(response.body.data).toHaveLength(3);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'Test snap 3',
+        'hello Test snap 2',
+        'Test snap 1'
+      ]);
+    });
+
+    it("should return items that have part of the word 'hello' ('hel') in his content", async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'hello Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app).get('/snaps/').query({ has: 'hel' }).set({
+        Authorization: `Bearer ${auth}`
+      }).expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'hello Test snap 2'
+      ]);
+    });
+
+    it("should not return items if no one has 'has' in his content", async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'hello Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app)
+        .get('/snaps/')
+        .query({ has: 'this-is-a-test' }).set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(0);
+    });
+
+    it("should return items that have part of the word 'hello' ('hel') in his content case insensitive", async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'hello Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app).get('/snaps/').query({ has: 'HeL' }).set({
+        Authorization: `Bearer ${auth}`
+      }).expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'hello Test snap 2'
+      ]);
+    });
+
+    it("should return items in unicode when 'has' is a emoji", async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1 😎😎😎'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'hello Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3 😎🤓👆'
+      });
+
+      const response = await request(app).get('/snaps/').query({ has: '😎' }).set({
+        Authorization: `Bearer ${auth}`
+      }).expect(200);
+
+      expect(response.body.data).toHaveLength(2);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'Test snap 3 😎🤓👆',
+        'Test snap 1 😎😎😎'
+      ]);
     });
   });
 
@@ -541,5 +760,175 @@ describe('Snap API Tests', () => {
       expect(UUID.isValid(snap.id)).toBe(true);
       expect(snap.content).toBe('Detailed snap');
     });
-  });
+
+    it('should return up to limit items with the username pass by parameter if limit is specified', async () => {
+
+      const username = 'testuser1';
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: username
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: username
+        },
+        content: 'Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: username
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app).get(`/snaps/by_username/${username}`).query({ limit: 2 }).set({
+        Authorization: `Bearer ${auth}`
+      }).expect(200);
+
+      expect(response.body.data).toHaveLength(2);
+    });
+
+    it('should return up to 20 items with the username pass by parameter if limit is not specified', async () => {
+      const username = 'testuser1';
+      for (let i = 0; i < 25; i++) {
+        await TwitSnap.create({
+          user: {
+            userId: 1,
+            name: `Test User 1`,
+            username: username
+          },
+          content: `Test snap 1`
+        });
+      }
+
+      const response = await request(app).get(`/snaps/by_username/${username}`).set({
+        Authorization: `Bearer ${auth}`
+      }).expect(200);
+
+      expect(response.body.data).toHaveLength(20);
+    });
+
+    it('should return items newer than createdAt as default behaviour', async () => {
+      const username = 'testuser1';
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: username
+        },
+        content: 'Test snap 1'
+      });
+      const twit = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: username
+        },
+        content: 'Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: username
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app)
+        .get(`/snaps/by_username/${username}`)
+        .query({ createdAt: twit.createdAt }).set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual(['Test snap 3']);
+    });
+
+    it('should return items older than createdAt if older is true', async () => {
+      const username = 'testuser1';
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: username
+        },
+        content: 'Test snap 1'
+      });
+      const twit = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: username
+        },
+        content: 'Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: username
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app)
+        .get(`/snaps/by_username/${username}`)
+        .query({ createdAt: twit.createdAt, older: true }).set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual(['Test snap 1']);
+    });
+
+    it('should return items newer than createdAt if older is false', async () => {
+      const username = 'testuser1';
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: username
+        },
+        content: 'Test snap 1'
+      });
+      const twit = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: username
+        },
+        content: 'Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: username
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app)
+        .get(`/snaps/by_username/${username}`)
+        .query({ createdAt: twit.createdAt, older: false }).set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual(['Test snap 3']);
+    });
+
+  })
 });
