@@ -1,6 +1,6 @@
 import { RootFilterQuery } from 'mongoose';
 import { NotFoundError, ValidationError } from '../types/customErrors';
-import { SnapResponse, TwitUser, Entities } from '../types/types';
+import { Entities, SnapResponse, TwitUser } from '../types/types';
 import { UUID } from '../utils/uuid';
 import TwitSnap, { ISnapModel } from './models/Snap';
 

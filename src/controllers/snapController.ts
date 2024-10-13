@@ -1,8 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
+import { LikeRepository } from '../repositories/likeRepository';
 import { ISnapRepository, SnapRepository } from '../repositories/snapRepository';
+import { LikeService } from '../service/likeService';
 import { ISnapService, SnapService } from '../service/snapService';
-import { SnapResponse, CreateSnapBody, TwitUser, Entities, Hashtag } from '../types/types';
 import { ValidationError } from '../types/customErrors';
+import { CreateSnapBody, Entities, Hashtag, SnapResponse, TwitUser } from '../types/types';
 
 const snapRepository: ISnapRepository = new SnapRepository();
 const snapService: ISnapService = new SnapService();
@@ -49,9 +51,20 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
     const older: boolean = req.query.older === 'true' ? true : false;
 
-    const snaps: SnapResponse[] = await snapRepository.findAll(createdAt, limit, older);
+    const user = (req as any).user;
 
-    res.status(200).json({ data: snaps });
+    new LikeService().validateUserId(user.userId);
+
+    const snaps: SnapResponse[] = await snapRepository.findAll(createdAt, limit, older);
+    const snapsInteractions = await Promise.all(
+      snaps.map(async twit => ({
+        ...twit,
+        likesCount: await new LikeRepository().getLikesByTwit(twit.id),
+        userLiked: await new LikeRepository().getUserLikedTwit(user.userId, twit.id)
+      }))
+    );
+    console.log(snapsInteractions);
+    res.status(200).json({ data: snapsInteractions });
   } catch (error) {
     next(error);
   }

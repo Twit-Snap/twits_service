@@ -8,6 +8,7 @@ export interface ILikeRepository {
   remove(userId: number, twitId: string): Promise<void>;
   getLikesByTwit(twitId: string): Promise<number>;
   getLikesByUser(userId: number): Promise<SnapResponse[]>;
+  getUserLikedTwit(userId: number, twitId: string): Promise<boolean>;
 }
 
 export class LikeRepository implements ILikeRepository {
@@ -38,6 +39,12 @@ export class LikeRepository implements ILikeRepository {
     const result = await Like.countDocuments({ twitId: twitId });
 
     return result;
+  }
+
+  async getUserLikedTwit(userId: number, twitId: string): Promise<boolean> {
+    const result = await Like.findOne({ twitId: twitId, userId: userId });
+
+    return result ? true : false;
   }
 
   async getLikesByUser(userId: number): Promise<SnapResponse[]> {
