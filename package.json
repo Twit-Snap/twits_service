@@ -5,7 +5,7 @@
     "build": "tsc",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint .",
-    "test": "docker-compose up -d mongodb && jest --maxWorkers=1 --coverage",
+    "test": "docker-compose up -d mongodb && NODE_ENV=development jest --maxWorkers=1 --coverage",
     "ci-test": "docker-compose up -d mongodb && jest --no-cache --maxWorkers=1 --coverage --ci"
   },
   "name": "ingsw2_tp_individual",
