@@ -62,6 +62,19 @@ describe('Snap API Tests', () => {
   });
 
   describe('POST /likes', () => {
+    it('should raise AuthenticationError if no Authorization is specified', async () => {
+      const response = await request(app).post('/likes').send({ twitId: twit1ID });
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({
+        detail: 'Authentication error.',
+        instance: '/likes',
+        status: 401,
+        title: 'Unauthorized',
+        type: 'about:blank'
+      });
+    });
+
     it('should create a new like document', async () => {
       const response = await request(app)
         .post('/likes')
@@ -164,6 +177,19 @@ describe('Snap API Tests', () => {
   });
 
   describe('DELETE /likes', () => {
+    it('should raise AuthenticationError if no Authorization is specified', async () => {
+      const response = await request(app).delete('/likes').send({ twitId: twit1ID });
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({
+        detail: 'Authentication error.',
+        instance: '/likes',
+        status: 401,
+        title: 'Unauthorized',
+        type: 'about:blank'
+      });
+    });
+
     it('should delete a like', async () => {
       await Like.create({
         userId: unsignedAuth.userId,
@@ -283,6 +309,19 @@ describe('Snap API Tests', () => {
   });
 
   describe('/likes/twits/:twitId', () => {
+    it('should raise AuthenticationError if no Authorization is specified', async () => {
+      const response = await request(app).get(`/likes/twits/${twit1ID}`);
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({
+        detail: 'Authentication error.',
+        instance: `/likes/twits/${twit1ID}`,
+        status: 401,
+        title: 'Unauthorized',
+        type: 'about:blank'
+      });
+    });
+
     it('should return the number of likes for a twit', async () => {
       await Like.create({
         userId: unsignedAuth.userId,
@@ -370,7 +409,20 @@ describe('Snap API Tests', () => {
     });
   });
 
-  describe('likes/users/:userId', () => {
+  describe('likes/user', () => {
+    it('should raise AuthenticationError if no Authorization is specified', async () => {
+      const response = await request(app).get(`/likes/user`);
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({
+        detail: 'Authentication error.',
+        instance: '/likes/user',
+        status: 401,
+        title: 'Unauthorized',
+        type: 'about:blank'
+      });
+    });
+
     it('should return all the likes that the authorized user has', async () => {
       await Like.create({
         userId: 2,

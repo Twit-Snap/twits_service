@@ -1,17 +1,36 @@
 import { NextFunction, Request, Response } from 'express';
-import { LikeRepository } from '../repositories/likeRepository';
-import { ISnapRepository, SnapRepository } from '../repositories/snapRepository';
-import { LikeService } from '../service/likeService';
-import { ISnapService, SnapService } from '../service/snapService';
+import { SnapService } from '../service/snapService';
+import { ITwitController } from '../types/controllerTypes';
 import { ValidationError } from '../types/customErrors';
-import { CreateSnapBody, Entities, Hashtag, SnapResponse, TwitUser } from '../types/types';
+import { CreateSnapBody, GetAllParams, SnapResponse, TwitUser } from '../types/types';
+import { LikeController } from './likeController';
 
-const snapRepository: ISnapRepository = new SnapRepository();
-const snapService: ISnapService = new SnapService();
+export class TwitController implements ITwitController {
+  validateContent(content: string | undefined): string {
+    if (!content) {
+      throw new ValidationError('content', 'The TwitSnap content is required.');
+    }
+    if (content.length > 280) {
+      throw new ValidationError(
+        content,
+        'The content of the TwitSnap must not exceed 280 characters.'
+      );
+    }
 
-function extractHashTags(content: string): Hashtag[] {
-  const hashTags = content.match(/#\w+/g);
-  return hashTags ? hashTags.map(tag => ({ text: tag })) : [];
+    return content;
+  }
+
+  validateUsersIds(usersIds: number[] | undefined): number[] {
+    if (!usersIds) {
+      throw new ValidationError('usersId', 'Users IDs required!');
+    }
+
+    if (!Array.isArray(usersIds)) {
+      throw new ValidationError('usersId', 'Users IDs must be an array of IDs!');
+    }
+
+    return usersIds;
+  }
 }
 
 export const createSnap = async (
@@ -20,25 +39,17 @@ export const createSnap = async (
   next: NextFunction
 ) => {
   try {
-    const { content } = req.body;
-    if (!content) {
-      throw new ValidationError(content, 'The TwitSnap content is required.');
-    }
-    if (content.length > 280) {
-      throw new ValidationError(
-        content,
-        'The content of the TwitSnap must not exceed 280 characters.'
-      );
-    }
-    let user: TwitUser = {
+    let content: string | undefined = req.body.content;
+
+    content = new TwitController().validateContent(content);
+
+    const user: TwitUser = {
       userId: req.body.authorId,
       name: req.body.authorName,
       username: req.body.authorUsername
     };
-    let entities: Entities = {
-      hashtags: extractHashTags(req.body.content)
-    };
-    const savedSnap: SnapResponse = await snapRepository.create(content, user, entities);
+
+    const savedSnap: SnapResponse = await new SnapService().createSnap(content, user);
     res.status(201).json({ data: savedSnap });
   } catch (error) {
     next(error);
@@ -47,25 +58,26 @@ export const createSnap = async (
 
 export const getAllSnaps = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const createdAt: string | undefined = req.query.createdAt?.toString();
-    const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
-    const older: boolean = req.query.older === 'true' ? true : false;
-    const has: string = req.query.has ? req.query.has.toString() : '';
+    var params: GetAllParams = {
+      createdAt: req.query.createdAt?.toString(),
+      limit: req.query.limit ? +req.query.limit.toString() : undefined,
+      older: req.query.older === 'true' ? true : false,
+      has: req.query.has ? req.query.has.toString() : '',
+      username: req.query.username?.toString(),
+      byFollowed: req.query.byFollowed === 'true' ? true : false
+    };
 
     const user = (req as any).user;
 
-    new LikeService().validateUserId(user.userId);
+    if (params.byFollowed) {
+      // query users service users ids
+      // params.followedIds =
+    }
 
-    const snaps: SnapResponse[] = await snapRepository.findAll(createdAt, limit, older, has);
-    const snapsInteractions = await Promise.all(
-      snaps.map(async twit => ({
-        ...twit,
-        likesCount: await new LikeRepository().getLikesByTwit(twit.id),
-        userLiked: await new LikeRepository().getUserLikedTwit(user.userId, twit.id)
-      }))
-    );
-    console.log(snapsInteractions);
-    res.status(200).json({ data: snapsInteractions });
+    new LikeController().validateUserId(user.userId);
+
+    const snaps: SnapResponse[] = await new SnapService().getAllSnaps(user.userId, params);
+    res.status(200).json({ data: snaps });
   } catch (error) {
     next(error);
   }
@@ -78,7 +90,7 @@ export const getSnapById = async (
 ) => {
   try {
     const { id } = req.params;
-    const snap: SnapResponse = await snapRepository.findById(id);
+    const snap: SnapResponse = await new SnapService().getSnapById(id);
     res.status(200).json({ data: snap });
   } catch (error) {
     next(error);
@@ -92,7 +104,7 @@ export const deleteSnapById = async (
 ) => {
   try {
     const { id } = req.params;
-    await snapRepository.deleteById(id);
+    await new SnapService().deleteSnapById(id);
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -106,61 +118,7 @@ export const getSnapsByHashtag = async (
 ) => {
   try {
     const { hashtag } = req.params;
-    const snaps: SnapResponse[] = await snapRepository.findByHashtag(hashtag);
-    res.status(200).json({ data: snaps });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getSnapsByUsersIds = async (
-  req: Request<{ id: string }>,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { usersIds } = req.body;
-
-    const createdAt: string | undefined = req.query.createdAt?.toString();
-    const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
-    const older: boolean = req.query.older === 'true' ? true : false;
-
-    snapService.validateUsersIds(usersIds);
-
-    const snaps: SnapResponse[] = await snapRepository.findByUsersIds(
-      usersIds,
-      createdAt,
-      limit,
-      older
-    );
-    res.status(200).json({ data: snaps });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getSnapsByUsername = async (
-  req: Request<{ username: string }>,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { username } = req.params;
-
-    if (!username) {
-      throw new ValidationError('username', 'Username required!');
-    }
-
-    const createdAt: string | undefined = req.query.createdAt?.toString();
-    const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
-    const older: boolean = req.query.older === 'true' ? true : false;
-
-    const snaps: SnapResponse[] = await snapRepository.findByUsername(
-      username,
-      createdAt,
-      limit,
-      older
-    );
+    const snaps: SnapResponse[] = await new SnapService().getSnapsByHashtag(hashtag);
     res.status(200).json({ data: snaps });
   } catch (error) {
     next(error);

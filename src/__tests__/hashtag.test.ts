@@ -27,6 +27,19 @@ describe('Snap API Tests', () => {
   });
 
   describe('GET /hashtag/:hashtag', () => {
+    it('should raise AuthenticationError if no Authorization is specified', async () => {
+      const response = await request(app).get(`/hashtags/None`);
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({
+        detail: 'Authentication error.',
+        instance: '/hashtags/None',
+        status: 401,
+        title: 'Unauthorized',
+        type: 'about:blank'
+      });
+    });
+
     it('should return an empty array when no snaps exist with said tag', async () => {
       const response = await request(app)
         .get('/hashtags/None')
@@ -51,9 +64,11 @@ describe('Snap API Tests', () => {
       }
     });
 
-    const response = await request(app).get('/hashtags/Test').set({
-      Authorization: `Bearer ${auth}`
-    });;
+    const response = await request(app)
+      .get('/hashtags/Test')
+      .set({
+        Authorization: `Bearer ${auth}`
+      });
     expect(response.status).toBe(200);
     expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
       'Hello! Doing a #Test'
@@ -95,9 +110,11 @@ describe('Snap API Tests', () => {
       }
     });
 
-    const response = await request(app).get('/hashtags/Test').set({
-      Authorization: `Bearer ${auth}`
-    });;
+    const response = await request(app)
+      .get('/hashtags/Test')
+      .set({
+        Authorization: `Bearer ${auth}`
+      });
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(3);
     expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([

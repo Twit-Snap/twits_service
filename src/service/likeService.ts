@@ -1,25 +1,46 @@
-import { ValidationError } from '../types/customErrors';
-import { UUID } from '../utils/uuid';
-
-export interface ILikeService {
-  validateTwitId(twitId: string): void;
-  validateUserId(userId: number): void;
-}
+import { LikeRepository } from '../repositories/likeRepository';
+import { SnapRepository } from '../repositories/snapRepository';
+import { ILikeService } from '../types/servicesTypes';
+import { LikeResponse, SnapResponse } from '../types/types';
 
 export class LikeService implements ILikeService {
-  validateTwitId(twitId: string) {
-    if (!twitId) {
-      throw new ValidationError('twitId', 'Twit ID required!');
-    }
+  async getLikesByTwit(twitId: string): Promise<number> {
+    //Twit exist?
+    await new SnapRepository().findById(twitId);
 
-    if (!UUID.isValid(twitId)) {
-      throw new ValidationError('twitId', 'Invalid UUID');
-    }
+    const data = await new LikeRepository().getLikesByTwit(twitId);
+
+    return data;
   }
 
-  validateUserId(userId: number) {
-    if (!userId) {
-      throw new ValidationError('userId', 'User ID required!');
-    }
+  async addLike(userId: number, twitId: string): Promise<LikeResponse> {
+    //Twit exist?
+    await new SnapRepository().findById(twitId);
+
+    const data = await new LikeRepository().add(userId, twitId);
+
+    return data;
+  }
+
+  async removeLike(userId: number, twitId: string): Promise<void> {
+    //Twit exist?
+    await new SnapRepository().findById(twitId);
+
+    await new LikeRepository().remove(userId, twitId);
+  }
+
+  async getLikesByUser(userId: number): Promise<SnapResponse[]> {
+    const data = await new LikeRepository().getLikesByUser(userId);
+    return data;
+  }
+
+  async addLikeInteractions(userId: number, twits: SnapResponse[]): Promise<SnapResponse[]> {
+    return await Promise.all(
+      twits.map(async twit => ({
+        ...twit,
+        likesCount: await new LikeRepository().getLikesByTwit(twit.id),
+        userLiked: await new LikeRepository().getUserLikedTwit(userId, twit.id)
+      }))
+    );
   }
 }
