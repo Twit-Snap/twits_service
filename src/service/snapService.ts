@@ -1,6 +1,6 @@
 import { SnapRepository } from '../repositories/snapRepository';
 import { ISnapService } from '../types/servicesTypes';
-import { Entities, Hashtag, SnapResponse, TwitUser } from '../types/types';
+import { Entities, GetAllParams, Hashtag, SnapResponse, TwitUser } from '../types/types';
 import { LikeService } from './likeService';
 
 export class SnapService implements ISnapService {
@@ -17,14 +17,8 @@ export class SnapService implements ISnapService {
     return savedSnap;
   }
 
-  async getAllSnaps(
-    userId: number,
-    createdAt: string | undefined,
-    limit: number | undefined,
-    older: boolean,
-    has: string
-  ) {
-    const snaps: SnapResponse[] = await new SnapRepository().findAll(createdAt, limit, older, has);
+  async getAllSnaps(userId: number, params: GetAllParams) {
+    const snaps: SnapResponse[] = await new SnapRepository().findAll(params);
     const snapsInteractions = await new LikeService().addLikeInteractions(userId, snaps);
 
     return snapsInteractions;

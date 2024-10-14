@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { SnapService } from '../service/snapService';
 import { ITwitController } from '../types/controllerTypes';
 import { ValidationError } from '../types/customErrors';
-import { CreateSnapBody, SnapResponse, TwitUser } from '../types/types';
+import { CreateSnapBody, GetAllParams, SnapResponse, TwitUser } from '../types/types';
 import { LikeController } from './likeController';
 
 export class TwitController implements ITwitController {
@@ -65,22 +65,20 @@ export const createSnap = async (
 
 export const getAllSnaps = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const createdAt: string | undefined = req.query.createdAt?.toString();
-    const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
-    const older: boolean = req.query.older === 'true' ? true : false;
-    const has: string = req.query.has ? req.query.has.toString() : '';
+    const params: GetAllParams = {
+      createdAt: req.query.createdAt?.toString(),
+      limit: req.query.limit ? +req.query.limit.toString() : undefined,
+      older: req.query.older === 'true' ? true : false,
+      has: req.query.has ? req.query.has.toString() : '',
+      username: req.query.username?.toString(),
+      byFollowed: req.query.byFollowed === 'true' ? true : false
+    };
 
     const user = (req as any).user;
 
     new LikeController().validateUserId(user.userId);
 
-    const snaps: SnapResponse[] = await new SnapService().getAllSnaps(
-      user.userId,
-      createdAt,
-      limit,
-      older,
-      has
-    );
+    const snaps: SnapResponse[] = await new SnapService().getAllSnaps(user.userId, params);
     res.status(200).json({ data: snaps });
   } catch (error) {
     next(error);

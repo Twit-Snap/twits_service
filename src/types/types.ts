@@ -6,6 +6,15 @@ export interface TwitUser {
   //verified: boolean;
 }
 
+export type GetAllParams = {
+  older: boolean;
+  byFollowed: boolean;
+  limit?: number;
+  createdAt?: string;
+  has?: string;
+  username?: string;
+};
+
 export type SnapResponse = {
   id: string;
   user: TwitUser;

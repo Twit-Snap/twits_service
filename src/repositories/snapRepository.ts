@@ -1,16 +1,11 @@
 import { RootFilterQuery } from 'mongoose';
 import { NotFoundError, ValidationError } from '../types/customErrors';
-import { Entities, SnapResponse, TwitUser } from '../types/types';
+import { Entities, GetAllParams, SnapResponse, TwitUser } from '../types/types';
 import { UUID } from '../utils/uuid';
 import TwitSnap, { ISnapModel } from './models/Snap';
 
 export interface ISnapRepository {
-  findAll(
-    createdAt: string | undefined,
-    limit: number | undefined,
-    older: boolean,
-    has: string | undefined
-  ): Promise<SnapResponse[]>;
+  findAll(params: GetAllParams): Promise<SnapResponse[]>;
   create(message: string, user: TwitUser, entities: Entities): Promise<SnapResponse>;
   findById(id: string): Promise<SnapResponse>;
   findByHashtag(hashtag: string): Promise<SnapResponse[]>;
@@ -21,7 +16,12 @@ export interface ISnapRepository {
     limit: number | undefined,
     older: boolean
   ): Promise<SnapResponse[]>;
-  findByUsername(username: string, createdAt: string | undefined, limit: number | undefined, older: boolean): Promise<SnapResponse[]>;
+  findByUsername(
+    username: string,
+    createdAt: string | undefined,
+    limit: number | undefined,
+    older: boolean
+  ): Promise<SnapResponse[]>;
 }
 
 export class SnapRepository implements ISnapRepository {
@@ -42,24 +42,19 @@ export class SnapRepository implements ISnapRepository {
     };
   }
 
-  async findAll(
-    createdAt: string | undefined,
-    limit: number | undefined,
-    older: boolean,
-    has: string | undefined
-  ): Promise<SnapResponse[]> {
-    var filter: RootFilterQuery<ISnapModel> = { content: { $regex: has, $options: "miu" } };
+  async findAll(params: GetAllParams): Promise<SnapResponse[]> {
+    var filter: RootFilterQuery<ISnapModel> = { content: { $regex: params.has, $options: 'miu' } };
 
-    if (createdAt) {
+    if (params.createdAt) {
       filter = {
         ...filter,
-        createdAt: older ? { $lt: createdAt } : { $gt: createdAt }
+        createdAt: params.older ? { $lt: params.createdAt } : { $gt: params.createdAt }
       };
     }
 
     const snaps = await TwitSnap.find(filter)
       .sort({ createdAt: -1 })
-      .limit(limit ? limit : 20);
+      .limit(params.limit ? params.limit : 20);
 
     return snaps.map(snap => ({
       id: snap._id,
@@ -134,9 +129,13 @@ export class SnapRepository implements ISnapRepository {
     }));
   }
 
-  async findByUsername(username: string, createdAt: string | undefined, limit: number | undefined, older: boolean): Promise<SnapResponse[]> {
-
-    var filter: RootFilterQuery<ISnapModel> = {  'user.username': { $in: username } };
+  async findByUsername(
+    username: string,
+    createdAt: string | undefined,
+    limit: number | undefined,
+    older: boolean
+  ): Promise<SnapResponse[]> {
+    var filter: RootFilterQuery<ISnapModel> = { 'user.username': { $in: username } };
 
     if (createdAt) {
       filter = {
@@ -148,7 +147,6 @@ export class SnapRepository implements ISnapRepository {
     const snaps = await TwitSnap.find(filter)
       .sort({ createdAt: -1 })
       .limit(limit ? limit : 20);
-
 
     return snaps.map(snap => ({
       id: snap._id,
