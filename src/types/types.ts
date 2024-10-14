@@ -9,6 +9,7 @@ export interface TwitUser {
 export type GetAllParams = {
   older: boolean;
   byFollowed: boolean;
+  followedIds?: number[];
   limit?: number;
   createdAt?: string;
   has?: string;

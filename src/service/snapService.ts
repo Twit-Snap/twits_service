@@ -37,35 +37,4 @@ export class SnapService implements ISnapService {
     const snaps: SnapResponse[] = await new SnapRepository().findByHashtag(hashtag);
     return snaps;
   }
-
-  async getSnapsByUsersIds(
-    usersIds: number[],
-    createdAt: string | undefined,
-    limit: number | undefined,
-    older: boolean
-  ): Promise<SnapResponse[]> {
-    const snaps: SnapResponse[] = await new SnapRepository().findByUsersIds(
-      usersIds,
-      createdAt,
-      limit,
-      older
-    );
-
-    return snaps;
-  }
-
-  async getSnapsByUsername(
-    username: string,
-    createdAt: string | undefined,
-    limit: number | undefined,
-    older: boolean
-  ): Promise<SnapResponse[]> {
-    const snaps: SnapResponse[] = await new SnapRepository().findByUsername(
-      username,
-      createdAt,
-      limit,
-      older
-    );
-    return snaps;
-  }
 }

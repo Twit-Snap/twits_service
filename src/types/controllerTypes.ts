@@ -7,7 +7,5 @@ export interface ILikeController {
 export interface ITwitController {
   validateContent(content: string | undefined): string;
 
-  validateUsername(username: string | undefined): string;
-
   validateUsersIds(usersIds: number[] | undefined): number[];
 }

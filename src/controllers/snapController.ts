@@ -20,13 +20,6 @@ export class TwitController implements ITwitController {
     return content;
   }
 
-  validateUsername(username: string | undefined): string {
-    if (!username) {
-      throw new ValidationError('username', 'Username required!');
-    }
-    return username;
-  }
-
   validateUsersIds(usersIds: number[] | undefined): number[] {
     if (!usersIds) {
       throw new ValidationError('usersId', 'Users IDs required!');
@@ -65,7 +58,7 @@ export const createSnap = async (
 
 export const getAllSnaps = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const params: GetAllParams = {
+    var params: GetAllParams = {
       createdAt: req.query.createdAt?.toString(),
       limit: req.query.limit ? +req.query.limit.toString() : undefined,
       older: req.query.older === 'true' ? true : false,
@@ -75,6 +68,11 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     };
 
     const user = (req as any).user;
+
+    if (params.byFollowed) {
+      // query users service users ids
+      // params.followedIds =
+    }
 
     new LikeController().validateUserId(user.userId);
 
@@ -121,58 +119,6 @@ export const getSnapsByHashtag = async (
   try {
     const { hashtag } = req.params;
     const snaps: SnapResponse[] = await new SnapService().getSnapsByHashtag(hashtag);
-    res.status(200).json({ data: snaps });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getSnapsByUsersIds = async (
-  req: Request<{ id: string }>,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { usersIds } = req.body;
-
-    const createdAt: string | undefined = req.query.createdAt?.toString();
-    const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
-    const older: boolean = req.query.older === 'true' ? true : false;
-
-    new TwitController().validateUsersIds(usersIds);
-
-    const snaps: SnapResponse[] = await new SnapService().getSnapsByUsersIds(
-      usersIds,
-      createdAt,
-      limit,
-      older
-    );
-    res.status(200).json({ data: snaps });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getSnapsByUsername = async (
-  req: Request<{ username: string }>,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    let username = req.params.username;
-
-    username = new TwitController().validateUsername(username);
-
-    const createdAt: string | undefined = req.query.createdAt?.toString();
-    const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
-    const older: boolean = req.query.older === 'true' ? true : false;
-
-    const snaps: SnapResponse[] = await new SnapService().getSnapsByUsername(
-      username,
-      createdAt,
-      limit,
-      older
-    );
     res.status(200).json({ data: snaps });
   } catch (error) {
     next(error);
