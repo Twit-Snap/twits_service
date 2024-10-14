@@ -34,6 +34,31 @@ describe('Snap API', () => {
   });
 
   describe('POST /snaps', () => {
+    it('should raise AuthenticationError if no Authorization is specified', async () => {
+      const response = await request(app)
+        .post('/snaps')
+        .send({
+          user: {
+            userId: 1,
+            name: 'Test User 1',
+            username: 'testuser1'
+          },
+          content: 'Test snap message',
+          entities: {
+            hashtags: []
+          }
+        });
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({
+        detail: 'Authentication error.',
+        instance: '/snaps',
+        status: 401,
+        title: 'Unauthorized',
+        type: 'about:blank'
+      });
+    });
+
     it('should create a new snap', async () => {
       const response = await request(app)
         .post('/snaps')
