@@ -1,10 +1,30 @@
 import { NextFunction, Request, Response } from 'express';
-import { LikeRepository } from '../repositories/likeRepository';
-import { SnapRepository } from '../repositories/snapRepository';
 import { LikeService } from '../service/likeService';
+import { ILikeController } from '../types/controllerTypes';
+import { ValidationError } from '../types/customErrors';
+import { UUID } from '../utils/uuid';
 
-const likeService = new LikeService();
-const likeRepository = new LikeRepository();
+export class LikeController implements ILikeController {
+  validateTwitId(twitId: string | undefined): string {
+    if (!twitId) {
+      throw new ValidationError('twitId', 'Twit ID required!');
+    }
+
+    if (!UUID.isValid(twitId)) {
+      throw new ValidationError('twitId', 'Invalid UUID');
+    }
+
+    return twitId;
+  }
+
+  validateUserId(userId: number | undefined): number {
+    if (!userId) {
+      throw new ValidationError('userId', 'User ID required!');
+    }
+
+    return userId;
+  }
+}
 
 export const getLikesByTwit = async (
   req: Request<{ twitId: string }>,
@@ -12,14 +32,11 @@ export const getLikesByTwit = async (
   next: NextFunction
 ) => {
   try {
-    likeService.validateTwitId(req.params.twitId);
+    let twitId = req.params.twitId;
 
-    const { twitId } = req.params;
+    twitId = new LikeController().validateTwitId(twitId);
 
-    //Twit exist?
-    await new SnapRepository().findById(twitId);
-
-    const data = await likeRepository.getLikesByTwit(twitId);
+    const data = await new LikeService().getLikesByTwit(twitId);
 
     res.status(200).json({ data: data });
   } catch (error) {
@@ -33,18 +50,15 @@ export const addLike = async (
   next: NextFunction
 ) => {
   try {
-    likeService.validateTwitId(req.body.twitId);
+    let twitId: string | undefined = req.body.twitId;
+
+    twitId = new LikeController().validateTwitId(twitId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
 
-    likeService.validateUserId(user.userId);
+    new LikeController().validateUserId(user.userId);
 
-    const { twitId } = req.body;
-
-    //Twit exist?
-    await new SnapRepository().findById(twitId);
-
-    const data = await likeRepository.add(user.userId, twitId);
+    const data = await new LikeService().addLike(user.userId, twitId);
 
     res.status(201).json({ data: data });
   } catch (error) {
@@ -58,18 +72,15 @@ export const removeLike = async (
   next: NextFunction
 ) => {
   try {
-    likeService.validateTwitId(req.body.twitId);
+    let twitId = req.body.twitId;
+
+    twitId = new LikeController().validateTwitId(twitId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
 
-    likeService.validateUserId(user.userId);
+    new LikeController().validateUserId(user.userId);
 
-    const { twitId } = req.body;
-
-    //Twit exist?
-    await new SnapRepository().findById(twitId);
-
-    await likeRepository.remove(user.userId, twitId);
+    await new LikeService().removeLike(user.userId, twitId);
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -81,9 +92,9 @@ export const getLikesByUser = async (req: Request, res: Response, next: NextFunc
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
 
-    likeService.validateUserId(user.userId);
+    new LikeController().validateUserId(user.userId);
 
-    const data = await likeRepository.getLikesByUser(user.userId);
+    const data = await new LikeService().getLikesByUser(user.userId);
 
     res.status(200).json({ data: data });
   } catch (error) {

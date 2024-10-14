@@ -1,17 +1,77 @@
-import { ValidationError } from '../types/customErrors';
-
-export interface ISnapService {
-  validateUsersIds(usersIds: number[]): void;
-}
+import { SnapRepository } from '../repositories/snapRepository';
+import { ISnapService } from '../types/servicesTypes';
+import { Entities, Hashtag, SnapResponse, TwitUser } from '../types/types';
+import { LikeService } from './likeService';
 
 export class SnapService implements ISnapService {
-  validateUsersIds(usersIds: number[]): void {
-    if (!usersIds) {
-      throw new ValidationError('usersId', 'Users IDs required!');
-    }
+  private extractHashTags(content: string): Hashtag[] {
+    const hashTags = content.match(/#\w+/g);
+    return hashTags ? hashTags.map(tag => ({ text: tag })) : [];
+  }
 
-    if (!Array.isArray(usersIds)) {
-      throw new ValidationError('usersId', 'Users IDs must be an array of IDs!');
-    }
+  async createSnap(content: string, user: TwitUser): Promise<SnapResponse> {
+    const entities: Entities = {
+      hashtags: this.extractHashTags(content)
+    };
+    const savedSnap: SnapResponse = await new SnapRepository().create(content, user, entities);
+    return savedSnap;
+  }
+
+  async getAllSnaps(
+    userId: number,
+    createdAt: string | undefined,
+    limit: number | undefined,
+    older: boolean,
+    has: string
+  ) {
+    const snaps: SnapResponse[] = await new SnapRepository().findAll(createdAt, limit, older, has);
+    const snapsInteractions = await new LikeService().addLikeInteractions(userId, snaps);
+
+    return snapsInteractions;
+  }
+
+  async getSnapById(twitId: string): Promise<SnapResponse> {
+    const snap: SnapResponse = await new SnapRepository().findById(twitId);
+    return snap;
+  }
+
+  async deleteSnapById(twitId: string): Promise<void> {
+    await new SnapRepository().deleteById(twitId);
+  }
+
+  async getSnapsByHashtag(hashtag: string): Promise<SnapResponse[]> {
+    const snaps: SnapResponse[] = await new SnapRepository().findByHashtag(hashtag);
+    return snaps;
+  }
+
+  async getSnapsByUsersIds(
+    usersIds: number[],
+    createdAt: string | undefined,
+    limit: number | undefined,
+    older: boolean
+  ): Promise<SnapResponse[]> {
+    const snaps: SnapResponse[] = await new SnapRepository().findByUsersIds(
+      usersIds,
+      createdAt,
+      limit,
+      older
+    );
+
+    return snaps;
+  }
+
+  async getSnapsByUsername(
+    username: string,
+    createdAt: string | undefined,
+    limit: number | undefined,
+    older: boolean
+  ): Promise<SnapResponse[]> {
+    const snaps: SnapResponse[] = await new SnapRepository().findByUsername(
+      username,
+      createdAt,
+      limit,
+      older
+    );
+    return snaps;
   }
 }
