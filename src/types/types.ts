@@ -71,3 +71,13 @@ export interface UserMention {
   username: string;
   indices: number[];
 }
+
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  name: string;
+  lastname: string;
+  birthdate: Date;
+  createdAt: Date;
+}

@@ -1,8 +1,10 @@
+import axios from 'axios';
 import { NextFunction, Request, Response } from 'express';
+import { JWTService } from '../service/jwtService';
 import { SnapService } from '../service/snapService';
 import { ITwitController } from '../types/controllerTypes';
 import { ValidationError } from '../types/customErrors';
-import { CreateSnapBody, GetAllParams, SnapResponse, TwitUser } from '../types/types';
+import { CreateSnapBody, GetAllParams, SnapResponse, TwitUser, User } from '../types/types';
 import { LikeController } from './likeController';
 
 export class TwitController implements ITwitController {
@@ -70,8 +72,17 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     const user = (req as any).user;
 
     if (params.byFollowed) {
-      // query users service users ids
-      // params.followedIds =
+      await axios
+        .get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, {
+          headers: { Authorization: `Bearer ${new JWTService().sign(user)}` }
+        })
+        .then(response => {
+          params.followedIds = response.data.map((user: User) => user.id);
+        })
+        .catch(error => {
+          console.error(error.data);
+          throw error;
+        });
     }
 
     new LikeController().validateUserId(user.userId);
