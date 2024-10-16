@@ -8,7 +8,11 @@ export class JWTService implements IJWTService {
   readonly secret = process.env.JWT_SECRET_KEY!;
 
   sign(payload: JwtCustomPayload): string {
-    return jwt.sign(payload, this.secret, { expiresIn: this.expiresIn });
+    return jwt.sign(
+      payload,
+      this.secret,
+      (payload as any).exp ? undefined : { expiresIn: this.expiresIn }
+    );
   }
 
   verify(token: string): JwtPayload | string {
