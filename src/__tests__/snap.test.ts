@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import { http, HttpResponse } from 'msw';
+import { setupServer } from 'msw/node';
 import request from 'supertest';
 import app from '../app';
 import TwitSnap from '../repositories/models/Snap';
@@ -6,12 +8,13 @@ import { JWTService } from '../service/jwtService';
 import { SnapResponse } from '../types/types';
 import { UUID } from '../utils/uuid';
 
-const auth = new JWTService().sign({
-  type: 'user',
+const user = {
   email: 'test@test.com',
   userId: 1,
   username: 'test'
-});
+};
+
+const auth = new JWTService().sign({ ...user, type: 'user' });
 
 describe('Snap API Tests', () => {
   beforeAll(async () => {
@@ -628,6 +631,380 @@ describe('Snap API Tests', () => {
         'Test snap 2',
         'Test snap 1'
       ]);
+    });
+
+    it('should return an array of snaps of the users it follows', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User',
+          username: 'TestUser2'
+        },
+        content: 'Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User',
+          username: 'TestUser3'
+        },
+        content: 'Test snap 3'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 4,
+          name: 'Test User',
+          username: 'TestUser4'
+        },
+        content: 'Test snap 4'
+      });
+
+      const server = setupServer(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
+            return HttpResponse.json([
+              {
+                id: 2,
+                name: 'Test User',
+                username: 'TestUser2'
+              },
+              {
+                id: 4,
+                name: 'Test User',
+                username: 'TestUser4'
+              }
+            ]);
+          })
+        ]
+      );
+      server.listen();
+
+      const response = await request(app)
+        .get(`/snaps`)
+        .query({ byFollowed: true })
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(200);
+
+      expect(response.body.data).toHaveLength(2);
+      expect(response.body.data.map((snap: SnapResponse) => snap.user.userId)).toEqual([4, 2]);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'Test snap 4',
+        'Test snap 2'
+      ]);
+      server.close();
+    });
+
+    it('should return an empty array of snaps if the user is not follows anyone', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User',
+          username: 'TestUser2'
+        },
+        content: 'Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User',
+          username: 'TestUser3'
+        },
+        content: 'Test snap 3'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 4,
+          name: 'Test User',
+          username: 'TestUser4'
+        },
+        content: 'Test snap 4'
+      });
+
+      const server = setupServer(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
+            return HttpResponse.json([]);
+          })
+        ]
+      );
+      server.listen();
+
+      const response = await request(app)
+        .get(`/snaps`)
+        .query({ byFollowed: true })
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(200);
+
+      expect(response.body.data).toHaveLength(0);
+      expect(response.body.data.map((snap: SnapResponse) => snap.user.userId)).toEqual([]);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([]);
+      server.close();
+    });
+
+    it('should pass the error received by the service on which it depends (case 400)', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User',
+          username: 'TestUser2'
+        },
+        content: 'Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User',
+          username: 'TestUser3'
+        },
+        content: 'Test snap 3'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 4,
+          name: 'Test User',
+          username: 'TestUser4'
+        },
+        content: 'Test snap 4'
+      });
+
+      const server = setupServer(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
+            return HttpResponse.json({ field: 'username', detail: user.username }, { status: 400 });
+          })
+        ]
+      );
+      server.listen();
+
+      const response = await request(app)
+        .get(`/snaps`)
+        .query({ byFollowed: true })
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        'custom-field': 'username',
+        detail: 'test',
+        instance: '/snaps?byFollowed=true',
+        status: 400,
+        title: 'Validation Error',
+        type: 'about:blank'
+      });
+
+      server.close();
+    });
+
+    it('should pass the error received by the service on which it depends (case 401)', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User',
+          username: 'TestUser2'
+        },
+        content: 'Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User',
+          username: 'TestUser3'
+        },
+        content: 'Test snap 3'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 4,
+          name: 'Test User',
+          username: 'TestUser4'
+        },
+        content: 'Test snap 4'
+      });
+
+      const server = setupServer(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
+            return HttpResponse.json({}, { status: 401 });
+          })
+        ]
+      );
+      server.listen();
+
+      const response = await request(app)
+        .get(`/snaps`)
+        .query({ byFollowed: true })
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({
+        detail: 'Authentication error.',
+        instance: '/snaps?byFollowed=true',
+        status: 401,
+        title: 'Unauthorized',
+        type: 'about:blank'
+      });
+
+      server.close();
+    });
+
+    it('should pass the error received by the service on which it depends (case 404)', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User',
+          username: 'TestUser2'
+        },
+        content: 'Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User',
+          username: 'TestUser3'
+        },
+        content: 'Test snap 3'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 4,
+          name: 'Test User',
+          username: 'TestUser4'
+        },
+        content: 'Test snap 4'
+      });
+
+      const server = setupServer(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
+            return HttpResponse.json({}, { status: 404 });
+          })
+        ]
+      );
+      server.listen();
+
+      const response = await request(app)
+        .get(`/snaps`)
+        .query({ byFollowed: true })
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        detail: 'The username with ID test was not found.',
+        instance: '/snaps?byFollowed=true',
+        status: 404,
+        title: 'username Not Found',
+        type: 'about:blank'
+      });
+
+      server.close();
+    });
+
+    it('should pass the error received by the service on which it depends (case 503)', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User',
+          username: 'TestUser2'
+        },
+        content: 'Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User',
+          username: 'TestUser3'
+        },
+        content: 'Test snap 3'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 4,
+          name: 'Test User',
+          username: 'TestUser4'
+        },
+        content: 'Test snap 4'
+      });
+
+      const server = setupServer(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
+            // 500, users service is down
+            return HttpResponse.json({}, { status: 500 });
+          })
+        ]
+      );
+      server.listen();
+
+      const response = await request(app)
+        .get(`/snaps`)
+        .query({ byFollowed: true })
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(503);
+      expect(response.body).toEqual({
+        detail: 'The server is not ready to handle the request.',
+        instance: '/snaps?byFollowed=true',
+        status: 503,
+        title: 'Service unavailable',
+        type: 'about:blank'
+      });
+
+      server.close();
     });
   });
 
