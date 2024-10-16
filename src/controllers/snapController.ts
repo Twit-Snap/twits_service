@@ -1,8 +1,16 @@
+import axios from 'axios';
 import { NextFunction, Request, Response } from 'express';
+import { JWTService } from '../service/jwtService';
 import { SnapService } from '../service/snapService';
 import { ITwitController } from '../types/controllerTypes';
-import { ValidationError } from '../types/customErrors';
-import { CreateSnapBody, GetAllParams, SnapResponse, TwitUser } from '../types/types';
+import {
+  AuthenticationError,
+  NotFoundError,
+  ServiceUnavailable,
+  ValidationError
+} from '../types/customErrors';
+import { JwtUserPayload } from '../types/jwt';
+import { CreateSnapBody, GetAllParams, SnapResponse, TwitUser, User } from '../types/types';
 import { LikeController } from './likeController';
 
 export class TwitController implements ITwitController {
@@ -30,6 +38,29 @@ export class TwitController implements ITwitController {
     }
 
     return usersIds;
+  }
+
+  async getFollowedIds(user: JwtUserPayload): Promise<number[]> {
+    return await axios
+      .get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, {
+        headers: { Authorization: `Bearer ${new JWTService().sign(user)}` }
+      })
+      .then(response => {
+        return response.data.map((user: User) => user.id);
+      })
+      .catch(error => {
+        console.error(error.data);
+        switch (error.status) {
+          case 400:
+            throw new ValidationError(error.response.data.field, error.response.data.detail);
+          case 401:
+            throw new AuthenticationError();
+          case 404:
+            throw new NotFoundError('username', user.username);
+          case 500:
+            throw new ServiceUnavailable();
+        }
+      });
   }
 }
 
@@ -70,8 +101,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     const user = (req as any).user;
 
     if (params.byFollowed) {
-      // query users service users ids
-      // params.followedIds =
+      params.followedIds = await new TwitController().getFollowedIds(user);
     }
 
     new LikeController().validateUserId(user.userId);

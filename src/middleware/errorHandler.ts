@@ -1,5 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
-import { AuthenticationError, NotFoundError, ValidationError } from '../types/customErrors';
+import {
+  AuthenticationError,
+  NotFoundError,
+  ServiceUnavailable,
+  ValidationError
+} from '../types/customErrors';
 import logger from '../utils/logger';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -33,6 +38,15 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
       title: 'Unauthorized',
       status: 401,
       detail: 'Authentication error.',
+      instance: req.originalUrl
+    });
+  } else if (err instanceof ServiceUnavailable) {
+    console.warn(`ServiceUnavailable: ${err.message}`);
+    res.status(503).json({
+      type: 'about:blank',
+      title: 'Service unavailable',
+      status: 503,
+      detail: 'The server is not ready to handle the request.',
       instance: req.originalUrl
     });
   } else if (err instanceof Error) {

@@ -28,3 +28,10 @@ export class AuthenticationError extends Error {
     this.name = 'AuthenticationError';
   }
 }
+
+export class ServiceUnavailable extends Error {
+  constructor() {
+    super('Service Unavailable error');
+    this.name = 'ServiceUnavailable';
+  }
+}
