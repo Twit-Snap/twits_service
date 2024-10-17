@@ -8,7 +8,6 @@ export interface ISnapRepository {
   findAll(params: GetAllParams): Promise<SnapResponse[]>;
   create(message: string, user: TwitUser, entities: Entities): Promise<SnapResponse>;
   findById(id: string): Promise<SnapResponse>;
-  findByHashtag(hashtag: string): Promise<SnapResponse[]>;
   deleteById(id: string): Promise<void>;
 }
 
@@ -54,6 +53,13 @@ export class SnapRepository implements ISnapRepository {
       };
     }
 
+    if (params.hashtag) {
+      filter = {
+        ...filter,
+        'entities.hashtags.text': `#${params.hashtag}`
+      };
+    }
+
     const snaps = await TwitSnap.find(filter)
       .sort({ createdAt: -1 })
       .limit(params.limit ? params.limit : 20);
@@ -90,17 +96,5 @@ export class SnapRepository implements ISnapRepository {
     if (result.deletedCount === 0) {
       throw new NotFoundError('Snap', id);
     }
-  }
-
-  async findByHashtag(hashtag: string): Promise<SnapResponse[]> {
-    const snaps = await TwitSnap.find({ 'entities.hashtags.text': `#${hashtag}` }).sort({
-      createdAt: -1
-    });
-    return snaps.map(snap => ({
-      id: snap._id,
-      user: snap.user,
-      content: snap.content,
-      createdAt: snap.createdAt
-    }));
   }
 }

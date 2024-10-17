@@ -32,9 +32,4 @@ export class SnapService implements ISnapService {
   async deleteSnapById(twitId: string): Promise<void> {
     await new SnapRepository().deleteById(twitId);
   }
-
-  async getSnapsByHashtag(hashtag: string): Promise<SnapResponse[]> {
-    const snaps: SnapResponse[] = await new SnapRepository().findByHashtag(hashtag);
-    return snaps;
-  }
 }

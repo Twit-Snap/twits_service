@@ -95,7 +95,8 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       older: req.query.older === 'true' ? true : false,
       has: req.query.has ? req.query.has.toString() : '',
       username: req.query.username?.toString(),
-      byFollowed: req.query.byFollowed === 'true' ? true : false
+      byFollowed: req.query.byFollowed === 'true' ? true : false,
+      hashtag: req.query.hashtag?.toString()
     };
 
     const user = (req as any).user;
@@ -136,20 +137,6 @@ export const deleteSnapById = async (
     const { id } = req.params;
     await new SnapService().deleteSnapById(id);
     res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getSnapsByHashtag = async (
-  req: Request<{ hashtag: string }>,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { hashtag } = req.params;
-    const snaps: SnapResponse[] = await new SnapService().getSnapsByHashtag(hashtag);
-    res.status(200).json({ data: snaps });
   } catch (error) {
     next(error);
   }
