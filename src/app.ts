@@ -4,7 +4,6 @@ import mongoose from 'mongoose';
 import path from 'path';
 import { errorHandler } from './middleware/errorHandler';
 import { jwtMiddleware } from './middleware/jwtMiddleware';
-import hashtagsRoutes from './routes/hashtagsRoutes';
 import likeRoutes from './routes/likesRoutes';
 import snapRoutes from './routes/snapRoutes';
 import logger from './utils/logger';
@@ -44,7 +43,6 @@ app.use(jwtMiddleware);
 
 // Routes
 app.use('/snaps', snapRoutes);
-app.use('/hashtags', hashtagsRoutes);
 app.use('/likes', likeRoutes);
 
 // Error handling middleware
