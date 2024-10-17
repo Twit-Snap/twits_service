@@ -1,6 +1,14 @@
 import request from 'supertest';
 import app from '../app';
+import { JWTService } from '../service/jwtService';
 import { UUID } from '../utils/uuid';
+
+const auth = new JWTService().sign({
+  type: 'user',
+  email: 'test@test.com',
+  userId: 1,
+  username: 'test'
+});
 
 // Mock UUID
 jest.mock('../utils/uuid', () => ({
@@ -26,6 +34,31 @@ describe('Snap API', () => {
   });
 
   describe('POST /snaps', () => {
+    it('should raise AuthenticationError if no Authorization is specified', async () => {
+      const response = await request(app)
+        .post('/snaps')
+        .send({
+          user: {
+            userId: 1,
+            name: 'Test User 1',
+            username: 'testuser1'
+          },
+          content: 'Test snap message',
+          entities: {
+            hashtags: []
+          }
+        });
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({
+        detail: 'Authentication error.',
+        instance: '/snaps',
+        status: 401,
+        title: 'Unauthorized',
+        type: 'about:blank'
+      });
+    });
+
     it('should create a new snap', async () => {
       const response = await request(app)
         .post('/snaps')
@@ -40,6 +73,9 @@ describe('Snap API', () => {
             hashtags: []
           }
         })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
         .expect(201);
 
       expect(response.body.data).toHaveProperty('id', 'mocked-uuid');
@@ -48,7 +84,13 @@ describe('Snap API', () => {
     });
 
     it('should return 400 for invalid input', async () => {
-      const response = await request(app).post('/snaps').send({}).expect(400);
+      const response = await request(app)
+        .post('/snaps')
+        .send({})
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(400);
 
       expect(response.body).toHaveProperty('type', 'about:blank');
       expect(response.body).toHaveProperty('title', 'Validation Error');
@@ -56,6 +98,7 @@ describe('Snap API', () => {
       expect(response.body).toHaveProperty('detail', 'The TwitSnap content is required.');
       expect(response.body).toHaveProperty('instance');
     });
+
     it('should return 400 for message too long', async () => {
       const response = await request(app)
         .post('/snaps')
@@ -69,6 +112,9 @@ describe('Snap API', () => {
           entities: {
             hashtags: []
           }
+        })
+        .set({
+          Authorization: `Bearer ${auth}`
         })
         .expect(400);
 

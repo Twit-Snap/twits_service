@@ -1,23 +1,67 @@
-import { NextFunction, Request, Response } from 'express';
-import { ISnapRepository, SnapRepository } from '../repositories/snapRepository';
-import { ISnapService, SnapService } from '../service/snapService';
-import {
-  SnapResponse,
-  CreateSnapBody,
-  TwitUser,
-  Entities,
-  Hashtag,
-  RankRequest
-} from '../types/types';
-import { ValidationError } from '../types/customErrors';
 import axios from 'axios';
+import { NextFunction, Request, Response } from 'express';
+import { JWTService } from '../service/jwtService';
+import { SnapService } from '../service/snapService';
+import { ITwitController } from '../types/controllerTypes';
+import {
+  AuthenticationError,
+  NotFoundError,
+  ServiceUnavailable,
+  ValidationError
+} from '../types/customErrors';
+import { JwtUserPayload } from '../types/jwt';
+import { CreateSnapBody, GetAllParams, SnapResponse, TwitUser, User } from '../types/types';
+import { LikeController } from './likeController';
 
-const snapRepository: ISnapRepository = new SnapRepository();
-const snapService: ISnapService = new SnapService();
+export class TwitController implements ITwitController {
+  validateContent(content: string | undefined): string {
+    if (!content) {
+      throw new ValidationError('content', 'The TwitSnap content is required.');
+    }
+    if (content.length > 280) {
+      throw new ValidationError(
+        content,
+        'The content of the TwitSnap must not exceed 280 characters.'
+      );
+    }
 
-function extractHashTags(content: string): Hashtag[] {
-  const hashTags = content.match(/#\w+/g);
-  return hashTags ? hashTags.map(tag => ({ text: tag })) : [];
+    return content;
+  }
+
+  validateUsersIds(usersIds: number[] | undefined): number[] {
+    if (!usersIds) {
+      throw new ValidationError('usersId', 'Users IDs required!');
+    }
+
+    if (!Array.isArray(usersIds)) {
+      throw new ValidationError('usersId', 'Users IDs must be an array of IDs!');
+    }
+
+    return usersIds;
+  }
+
+  async getFollowedIds(user: JwtUserPayload): Promise<number[]> {
+    return await axios
+      .get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, {
+        headers: { Authorization: `Bearer ${new JWTService().sign(user)}` }
+      })
+      .then(response => {
+        return response.data.map((user: User) => user.id);
+      })
+      .catch(error => {
+        console.error(error.data);
+        switch (error.status) {
+          case 400:
+            throw new ValidationError(error.response.data.field, error.response.data.detail);
+          case 401:
+            throw new AuthenticationError();
+          case 404:
+            throw new NotFoundError('username', user.username);
+          case 500:
+            throw new ServiceUnavailable();
+        }
+      });
+  }
 }
 
 export const createSnap = async (
@@ -26,51 +70,45 @@ export const createSnap = async (
   next: NextFunction
 ) => {
   try {
-    const { content } = req.body;
-    if (!content) {
-      throw new ValidationError(content, 'The TwitSnap content is required.');
-    }
-    if (content.length > 280) {
-      throw new ValidationError(
-        content,
-        'The content of the TwitSnap must not exceed 280 characters.'
-      );
-    }
-    let user: TwitUser = {
+    let content: string | undefined = req.body.content;
+
+    content = new TwitController().validateContent(content);
+
+    const user: TwitUser = {
       userId: req.body.authorId,
       name: req.body.authorName,
       username: req.body.authorUsername
     };
-    let entities: Entities = {
-      hashtags: extractHashTags(req.body.content)
-    };
-    const savedSnap: SnapResponse = await snapRepository.create(content, user, entities);
+
+    const savedSnap: SnapResponse = await new SnapService().createSnap(content, user);
     res.status(201).json({ data: savedSnap });
   } catch (error) {
     next(error);
   }
 };
 
-export const getSnaps = async (req: Request, res: Response, next: NextFunction) => {
+export const getAllSnaps = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const createdAt: string | undefined = req.query.createdAt?.toString();
-    const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
-    const older: boolean = req.query.older === 'true' ? true : false;
-    const username: string | undefined = req.query.username?.toString();
-    const rank: boolean = req.query.rank === 'true' ? true : false;
+    var params: GetAllParams = {
+      createdAt: req.query.createdAt?.toString(),
+      limit: req.query.limit ? +req.query.limit.toString() : undefined,
+      older: req.query.older === 'true' ? true : false,
+      has: req.query.has ? req.query.has.toString() : '',
+      username: req.query.username?.toString(),
+      byFollowed: req.query.byFollowed === 'true' ? true : false,
+      hashtag: req.query.hashtag?.toString()
+    };
 
-    if (rank && username) {
-      const sample_snaps: SnapResponse[] = await snapRepository.findByUsername(username, createdAt, limit, older);
-      let sample_snaps_parsed : RankRequest = {data : sample_snaps.map(snap => {return {id: snap.id, content: snap.content}})};
-      const rank_result = await axios.post(`${process.env.FEED_ALGORITHM_URL}/rank`, sample_snaps_parsed);
-      rank_result.data.ranking.data = await Promise.all(rank_result.data.ranking.data.map(async (snap : SnapResponse) => await snapRepository.findById(snap.id)));
-      console.log("Fetched the following Tweets for user: " ,username, " --> ",  rank_result.data.ranking.data);
-      res.status(200).json({ data: rank_result.data.ranking.data});
-    } else {
-      const snaps: SnapResponse[] = await snapRepository.findAll(createdAt, limit, older);
-      res.status(200).json({ data: snaps });
+    const user = (req as any).user;
+
+    if (params.byFollowed) {
+      params.followedIds = await new TwitController().getFollowedIds(user);
     }
 
+    new LikeController().validateUserId(user.userId);
+
+    const snaps: SnapResponse[] = await new SnapService().getAllSnaps(user.userId, params);
+    res.status(200).json({ data: snaps });
   } catch (error) {
     next(error);
   }
@@ -83,7 +121,7 @@ export const getSnapById = async (
 ) => {
   try {
     const { id } = req.params;
-    const snap: SnapResponse = await snapRepository.findById(id);
+    const snap: SnapResponse = await new SnapService().getSnapById(id);
     res.status(200).json({ data: snap });
   } catch (error) {
     next(error);
@@ -97,77 +135,9 @@ export const deleteSnapById = async (
 ) => {
   try {
     const { id } = req.params;
-    await snapRepository.deleteById(id);
+    await new SnapService().deleteSnapById(id);
     res.status(204).send();
   } catch (error) {
     next(error);
   }
-};
-
-export const getSnapsByHashtag = async (
-  req: Request<{ hashtag: string }>,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { hashtag } = req.params;
-    const snaps: SnapResponse[] = await snapRepository.findByHashtag(hashtag);
-    res.status(200).json({ data: snaps });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getSnapsByUsersIds = async (
-  req: Request<{ id: string }>,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { usersIds } = req.body;
-
-    const createdAt: string | undefined = req.query.createdAt?.toString();
-    const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
-    const older: boolean = req.query.older === 'true' ? true : false;
-
-    snapService.validateUsersIds(usersIds);
-
-    const snaps: SnapResponse[] = await snapRepository.findByUsersIds(
-      usersIds,
-      createdAt,
-      limit,
-      older
-    );
-    res.status(200).json({ data: snaps });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getSnapsByUsername = async (
-  req: Request<{ username: string }>,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { username } = req.params;
-
-
-    if (!username) {
-      throw new ValidationError('username', 'Username required!');
-    }
-
-    const createdAt: string | undefined = req.query.createdAt?.toString();
-    const limit: number | undefined = req.query.limit ? +req.query.limit.toString() : undefined;
-    const older: boolean = req.query.older === 'true' ? true : false;
-
-    const snaps: SnapResponse[] = await snapRepository.findByUsername(username, createdAt, limit, older);
-    res.status(200).json({ data: snaps });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getAllSnaps = async (): Promise<SnapResponse[]> => {
-  return await snapRepository.findAll(undefined, undefined, false);
 };

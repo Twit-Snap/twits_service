@@ -1,0 +1,35 @@
+@url = https://twitsservice-production.up.railway.app
+
+
+# get all snaps
+curl -X GET {{url}}/snaps
+
+# get snap by
+
+### invalid uuid
+curl -X GET {{url}}/snaps/e0462215-9238-4919-a4e0-0be725d7ea7
+
+### uuid not found
+curl -X GET {{url}}/snaps/e0462215-9238-4919-a4e0-0be725d7ea7e
+### existent uuid
+curl -X GET {{url}}/snaps/e0462215-9238-4919-a4e0-0be725d7ed57
+
+
+# create snap
+
+### message ok
+curl -X POST {{url}}/snaps -H "Content-Type: application/json" -d '{"authorId" : 0, "authorName" : "Test User 1", "authorUsername" : "testuser1", "content" : "Hello world!"}'
+
+# delete snap
+
+### invalid uuid
+curl -X DELETE {{url}}/snaps/e0462215-9238-4919-a4e0-0be725d7ea7
+
+### uuid not found
+curl -X DELETE {{url}}/snaps/e0462215-9238-4919-a4e0-0be725d7ea7e
+
+### existent uuid
+curl -X DELETE {{url}}/snaps/d3c677d6-8138-447c-9bc9-b7151cf036ff
+
+### snaps by username
+curl -X GET {{url}}/snaps/by_username/jmpo

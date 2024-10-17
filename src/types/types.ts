@@ -20,10 +20,29 @@ export type SnapRankSample = {
   data : SnapRank[];
 }
 
+export type GetAllParams = {
+  older: boolean;
+  byFollowed: boolean;
+  followedIds?: number[];
+  limit?: number;
+  createdAt?: string;
+  has?: string;
+  username?: string;
+  hashtag?: string;
+};
+
 export type SnapResponse = {
   id: string;
   user: TwitUser;
   content: string;
+  createdAt: string;
+  likesCount?: number;
+  userLiked?: boolean;
+};
+
+export type LikeResponse = {
+  userId: number;
+  twitId: string;
   createdAt: string;
 };
 
@@ -66,4 +85,14 @@ export interface UserMention {
   id: number;
   username: string;
   indices: number[];
+}
+
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  name: string;
+  lastname: string;
+  birthdate: Date;
+  createdAt: Date;
 }

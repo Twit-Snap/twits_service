@@ -21,3 +21,17 @@ export class ValidationError extends Error {
     this.name = 'ValidationError';
   }
 }
+
+export class AuthenticationError extends Error {
+  constructor() {
+    super('Authentication error');
+    this.name = 'AuthenticationError';
+  }
+}
+
+export class ServiceUnavailable extends Error {
+  constructor() {
+    super('Service Unavailable error');
+    this.name = 'ServiceUnavailable';
+  }
+}
