@@ -9,7 +9,7 @@ export interface ISnapRepository {
   create(message: string, user: TwitUser, entities: Entities): Promise<SnapResponse>;
   findById(id: string): Promise<SnapResponse>;
   deleteById(id: string): Promise<void>;
-}
+} 
 
 export class SnapRepository implements ISnapRepository {
   async create(content: string, user: TwitUser, entities: Entities): Promise<SnapResponse> {
@@ -62,6 +62,7 @@ export class SnapRepository implements ISnapRepository {
 
     const snaps = await TwitSnap.find(filter)
       .sort({ createdAt: -1 })
+      .skip(params.offset ? params.offset : 0)
       .limit(params.limit ? params.limit : 20);
 
     return snaps.map(snap => ({

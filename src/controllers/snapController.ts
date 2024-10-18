@@ -92,6 +92,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     var params: GetAllParams = {
       createdAt: req.query.createdAt?.toString(),
       limit: req.query.limit ? +req.query.limit.toString() : undefined,
+      offset: req.query.offset ? +req.query.offset.toString() : undefined,
       older: req.query.older === 'true' ? true : false,
       has: req.query.has ? req.query.has.toString() : '',
       username: req.query.username?.toString(),
@@ -105,7 +106,9 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       params.followedIds = await new TwitController().getFollowedIds(user);
     }
 
-    new LikeController().validateUserId(user.userId);
+    if ((req as any).user.type !== 'admin') {
+      new LikeController().validateUserId(user.userId);
+    }
 
     const snaps: SnapResponse[] = await new SnapService().getAllSnaps(user.userId, params);
     res.status(200).json({ data: snaps });
