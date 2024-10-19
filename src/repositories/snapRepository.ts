@@ -9,6 +9,8 @@ export interface ISnapRepository {
   create(message: string, user: TwitUser, entities: Entities): Promise<SnapResponse>;
   findById(id: string): Promise<SnapResponse>;
   deleteById(id: string): Promise<void>;
+  totalAmount(): Promise<number>;
+
 } 
 
 export class SnapRepository implements ISnapRepository {
@@ -97,5 +99,10 @@ export class SnapRepository implements ISnapRepository {
     if (result.deletedCount === 0) {
       throw new NotFoundError('Snap', id);
     }
+  }
+
+  async totalAmount(): Promise<number> {
+    const result = await TwitSnap.countDocuments();
+    return result;
   }
 }

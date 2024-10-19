@@ -144,3 +144,12 @@ export const deleteSnapById = async (
     next(error);
   }
 };
+
+export const getTotalAmount = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const totalAmount = await new SnapService().getTotalAmount();
+    res.status(200).json({ data: totalAmount });
+  } catch (error) {
+    next(error);
+  }
+}
