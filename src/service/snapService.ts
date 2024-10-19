@@ -32,4 +32,8 @@ export class SnapService implements ISnapService {
   async deleteSnapById(twitId: string): Promise<void> {
     await new SnapRepository().deleteById(twitId);
   }
+
+  async loadSnapsToFeedAlgorithm(): Promise<void> {
+    await new SnapRepository().loadSnapsToFeedAlgorithm();
+  }
 }

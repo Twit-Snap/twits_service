@@ -7,11 +7,7 @@ import { jwtMiddleware } from './middleware/jwtMiddleware';
 import likeRoutes from './routes/likesRoutes';
 import snapRoutes from './routes/snapRoutes';
 import logger from './utils/logger';
-import {
-  getAllSnaps
-} from './controllers/snapController';
-import { SnapResponse, RankRequest } from './types/types';
-import axios from 'axios';
+import { SnapService } from './service/snapService';
 
 // Función para inicializar el entorno
 function initializeEnvironment() {
@@ -60,17 +56,7 @@ export const connectToMongoDB = async () => {
     logger.info('Connected to MongoDB');
 
     //Load all snaps to feed algorithm
-    const snaps: SnapResponse[] = await getAllSnaps();
-    const snapData : RankRequest = {
-      data:
-        snaps.map(snap => {
-          return {
-            id: snap.id,
-            content: snap.content,
-          };
-        })
-    };
-    await axios.post(`${process.env.FEED_ALGORITHM_URL}/`, snapData);
+    await new SnapService().loadSnapsToFeedAlgorithm();
     console.log('Snaps loaded to feed algorithm');
 
   } catch (err) {

@@ -10,7 +10,14 @@ import {
   ValidationError
 } from '../types/customErrors';
 import { JwtUserPayload } from '../types/jwt';
-import { CreateSnapBody, GetAllParams, SnapResponse, TwitUser, User } from '../types/types';
+import {
+  CreateSnapBody,
+  GetAllParams,
+  SnapResponse,
+  TwitUser,
+  User,
+  RankRequest
+} from '../types/types';
 import { LikeController } from './likeController';
 
 export class TwitController implements ITwitController {
@@ -92,23 +99,36 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     var params: GetAllParams = {
       createdAt: req.query.createdAt?.toString(),
       limit: req.query.limit ? +req.query.limit.toString() : undefined,
-      older: req.query.older === 'true' ? true : false,
+      older: req.query.older === 'true',
       has: req.query.has ? req.query.has.toString() : '',
       username: req.query.username?.toString(),
-      byFollowed: req.query.byFollowed === 'true' ? true : false,
-      hashtag: req.query.hashtag?.toString()
+      byFollowed: req.query.byFollowed === 'true',
+      hashtag: req.query.hashtag?.toString(),
+      rank: req.query.rank?.toString()
     };
-
     const user = (req as any).user;
 
-    if (params.byFollowed) {
-      params.followedIds = await new TwitController().getFollowedIds(user);
+    if (params.rank && params.username) {
+      const sample_snaps: SnapResponse[] = await new SnapService().getAllSnaps(user.id, params);
+      let sample_snaps_parsed: RankRequest = {
+        data: sample_snaps.map(snap => {
+          return { id: snap.id, content: snap.content }
+        })
+      };
+      const rank_result = await axios.post(`${process.env.FEED_ALGORITHM_URL}/rank`, sample_snaps_parsed);
+      rank_result.data.ranking.data = await Promise.all(rank_result.data.ranking.data.map(async (snap: SnapResponse) => await new SnapService().getSnapById(snap.id)));
+      console.log("Fetched the following Tweets for user: ", params.username, " --> ", rank_result.data.ranking.data);
+      res.status(200).json({ data: rank_result.data.ranking.data });
+    } else {
+      if (params.byFollowed) {
+        params.followedIds = await new TwitController().getFollowedIds(user);
+      }
+
+      new LikeController().validateUserId(user.userId);
+
+      const snaps: SnapResponse[] = await new SnapService().getAllSnaps(user.userId, params);
+      res.status(200).json({ data: snaps });
     }
-
-    new LikeController().validateUserId(user.userId);
-
-    const snaps: SnapResponse[] = await new SnapService().getAllSnaps(user.userId, params);
-    res.status(200).json({ data: snaps });
   } catch (error) {
     next(error);
   }

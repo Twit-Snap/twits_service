@@ -1,14 +1,16 @@
 import { RootFilterQuery } from 'mongoose';
 import { NotFoundError, ValidationError } from '../types/customErrors';
-import { Entities, GetAllParams, SnapResponse, TwitUser } from '../types/types';
+import { Entities, GetAllParams, SnapResponse, TwitUser, RankRequest } from '../types/types';
 import { UUID } from '../utils/uuid';
 import TwitSnap, { ISnapModel } from './models/Snap';
+import axios from 'axios';
 
 export interface ISnapRepository {
   findAll(params: GetAllParams): Promise<SnapResponse[]>;
   create(message: string, user: TwitUser, entities: Entities): Promise<SnapResponse>;
   findById(id: string): Promise<SnapResponse>;
   deleteById(id: string): Promise<void>;
+  loadSnapsToFeedAlgorithm(): Promise<void>;
 }
 
 export class SnapRepository implements ISnapRepository {
@@ -96,5 +98,17 @@ export class SnapRepository implements ISnapRepository {
     if (result.deletedCount === 0) {
       throw new NotFoundError('Snap', id);
     }
+  }
+
+  async loadSnapsToFeedAlgorithm() : Promise<void> {
+    // Loads all snaps to feed algorithm
+    const snaps_parsed: RankRequest = {
+      data: (await TwitSnap.find({}).exec()).map((snap: ISnapModel) => ({
+      id: snap._id,
+      content : snap.content,
+      }))
+    };
+    await axios.post(`${process.env.FEED_ALGORITHM_URL}/`, snaps_parsed);
+    console.log('Snaps loaded to feed algorithm');
   }
 }

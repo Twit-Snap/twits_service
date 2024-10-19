@@ -29,6 +29,7 @@ export type GetAllParams = {
   has?: string;
   username?: string;
   hashtag?: string;
+  rank?: string;
 };
 
 export type SnapResponse = {
