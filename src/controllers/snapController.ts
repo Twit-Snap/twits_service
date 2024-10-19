@@ -106,6 +106,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       hashtag: req.query.hashtag?.toString(),
       rank: req.query.rank?.toString()
     };
+
     const user = (req as any).user;
 
     let snaps: SnapResponse[] = [];
@@ -166,6 +167,7 @@ export const deleteSnapById = async (
     const { id } = req.params;
     await new SnapService().deleteSnapById(id);
     res.status(204).send();
+    new SnapService().loadSnapsToFeedAlgorithm();
   } catch (error) {
     next(error);
   }
