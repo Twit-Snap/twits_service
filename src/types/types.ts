@@ -8,6 +8,7 @@ export interface TwitUser {
 
 export type RankRequest = {
   data: { id: string; content: string }[];
+  limit : number;
 };
 
 export type SnapRank = {

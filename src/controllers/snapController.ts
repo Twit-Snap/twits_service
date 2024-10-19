@@ -98,7 +98,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
   try {
     var params: GetAllParams = {
       createdAt: req.query.createdAt?.toString(),
-      limit: req.query.limit ? +req.query.limit.toString() : undefined,
+      limit: req.query.limit ? +req.query.limit.toString() : 20,
       older: req.query.older === 'true',
       has: req.query.has ? req.query.has.toString() : '',
       username: req.query.username?.toString(),
@@ -108,27 +108,44 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     };
     const user = (req as any).user;
 
-    if (params.rank && params.username) {
-      const sample_snaps: SnapResponse[] = await new SnapService().getAllSnaps(user.id, params);
+    let snaps: SnapResponse[] = [];
+
+    if (params.rank && params.username && !params.byFollowed) {
+      params.limit = params.limit ? Math.floor(params.limit / 4) : 5;
+      const sample_params = {
+        username: params.username,
+        rank: params.rank,
+        byFollowed: params.byFollowed,
+        older: false,
+        limit: params.limit ? Math.floor(params.limit * 3) : 15,
+        has: params.has,
+      }
+      const sample_snaps: SnapResponse[] = await new SnapService().getAllSnaps(user.id, sample_params);
       let sample_snaps_parsed: RankRequest = {
         data: sample_snaps.map(snap => {
           return { id: snap.id, content: snap.content }
-        })
+        }),
+        limit: params.limit ? params.limit : 5
       };
       const rank_result = await axios.post(`${process.env.FEED_ALGORITHM_URL}/rank`, sample_snaps_parsed);
       rank_result.data.ranking.data = await Promise.all(rank_result.data.ranking.data.map(async (snap: SnapResponse) => await new SnapService().getSnapById(snap.id)));
       console.log("Fetched the following Tweets for user: ", params.username, " --> ", rank_result.data.ranking.data);
-      res.status(200).json({ data: rank_result.data.ranking.data });
-    } else {
-      if (params.byFollowed) {
-        params.followedIds = await new TwitController().getFollowedIds(user);
-      }
-
-      new LikeController().validateUserId(user.userId);
-
-      const snaps: SnapResponse[] = await new SnapService().getAllSnaps(user.userId, params);
-      res.status(200).json({ data: snaps });
+      snaps.push(...rank_result.data.ranking.data);
     }
+
+    if (params.byFollowed) {
+      params.followedIds = await new TwitController().getFollowedIds(user);
+    }
+
+    new LikeController().validateUserId(user.userId);
+
+    const result: SnapResponse[] = await new SnapService().getAllSnaps(user.userId, params);
+    snaps.push(...result);
+
+    //Filter out duplicates returned by either of the two methods
+    snaps = snaps.filter((snap, index, self) => index === self.findIndex((t) => (t.id === snap.id)));
+
+    res.status(200).json({ data: snaps });
   } catch (error) {
     next(error);
   }

@@ -106,7 +106,8 @@ export class SnapRepository implements ISnapRepository {
       data: (await TwitSnap.find({}).exec()).map((snap: ISnapModel) => ({
       id: snap._id,
       content : snap.content,
-      }))
+      })),
+      limit: 1000
     };
     await axios.post(`${process.env.FEED_ALGORITHM_URL}/`, snaps_parsed);
     console.log('Snaps loaded to feed algorithm');
