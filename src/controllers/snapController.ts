@@ -64,6 +64,15 @@ export class TwitController implements ITwitController {
   }
 }
 
+export const getTotalAmount = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const totalAmount = await new SnapService().getTotalAmount();
+    res.status(200).json({ data: totalAmount });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createSnap = async (
   req: Request<{}, {}, CreateSnapBody>,
   res: Response,
@@ -145,11 +154,3 @@ export const deleteSnapById = async (
   }
 };
 
-export const getTotalAmount = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const totalAmount = await new SnapService().getTotalAmount();
-    res.status(200).json({ data: totalAmount });
-  } catch (error) {
-    next(error);
-  }
-}

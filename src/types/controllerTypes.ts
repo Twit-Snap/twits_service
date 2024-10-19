@@ -10,5 +10,4 @@ export interface ITwitController {
   validateContent(content: string | undefined): string;
   validateUsersIds(usersIds: number[] | undefined): number[];
   getFollowedIds(user: JwtUserPayload): Promise<number[]>;
-  getTotalAmount(): Promise<number>;
 }

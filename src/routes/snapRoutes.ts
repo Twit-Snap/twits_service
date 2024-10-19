@@ -10,7 +10,7 @@ import {
 const router = express.Router();
 
 router.post('/', createSnap);
-router.post('/amount', getTotalAmount);
+router.get('/amount', getTotalAmount);
 router.get('/', getAllSnaps);
 router.get('/:id', getSnapById);
 router.delete('/:id', deleteSnapById);

@@ -34,6 +34,7 @@ export class SnapService implements ISnapService {
   }
 
   async getTotalAmount(): Promise<number> {
+    console.log('Getting total amount of snaps');
     return await new SnapRepository().totalAmount();
   }
 }
