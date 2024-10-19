@@ -112,24 +112,14 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
 
     if (params.rank && params.username && !params.byFollowed) {
       params.limit = params.limit ? Math.floor(params.limit / 4) : 5;
-      const sample_params = {
-        username: params.username,
-        rank: params.rank,
-        byFollowed: params.byFollowed,
-        older: false,
-        limit: params.limit ? Math.floor(params.limit * 3) : 15,
-        has: params.has,
-      }
-      const sample_snaps: SnapResponse[] = await new SnapService().getAllSnaps(user.id, sample_params);
-      let sample_snaps_parsed: RankRequest = {
-        data: sample_snaps.map(snap => {
-          return { id: snap.id, content: snap.content }
-        }),
-        limit: params.limit ? params.limit : 5
+      const sample_snaps = await new SnapService().getSnapSample(user.userId);
+      let sample_snaps_request: RankRequest = {
+        data: sample_snaps.data,
+        limit: params.limit ? (params.limit * 3) : 15
       };
-      const rank_result = await axios.post(`${process.env.FEED_ALGORITHM_URL}/rank`, sample_snaps_parsed);
+      const rank_result = await axios.post(`${process.env.FEED_ALGORITHM_URL}/rank`, sample_snaps_request);
       rank_result.data.ranking.data = await Promise.all(rank_result.data.ranking.data.map(async (snap: SnapResponse) => await new SnapService().getSnapById(snap.id)));
-      console.log("Fetched the following Tweets for user: ", params.username, " --> ", rank_result.data.ranking.data);
+      console.log("Fetched from the algo the following Tweets for user: ", params.username, " --> ", rank_result.data.ranking.data);
       snaps.push(...rank_result.data.ranking.data);
     }
 
@@ -143,7 +133,9 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     snaps.push(...result);
 
     //Filter out duplicates returned by either of the two methods
-    snaps = snaps.filter((snap, index, self) => index === self.findIndex((t) => (t.id === snap.id)));
+    snaps = snaps.filter((snap, index, self) =>
+      index === self.findIndex((t) => (t.id === snap.id)) && (!params.rank || snap.user.username !== user.username)
+    );
 
     res.status(200).json({ data: snaps });
   } catch (error) {

@@ -18,7 +18,7 @@ export type SnapRank = {
 };
 
 export type SnapRankSample = {
-  data : SnapRank[];
+  data : { id: string; content: string }[];
 }
 
 export type GetAllParams = {

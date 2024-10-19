@@ -1,6 +1,6 @@
 import { SnapRepository } from '../repositories/snapRepository';
 import { ISnapService } from '../types/servicesTypes';
-import { Entities, GetAllParams, Hashtag, SnapResponse, TwitUser } from '../types/types';
+import { Entities, GetAllParams, Hashtag, SnapRankSample, SnapResponse, TwitUser } from '../types/types';
 import { LikeService } from './likeService';
 
 export class SnapService implements ISnapService {
@@ -35,5 +35,9 @@ export class SnapService implements ISnapService {
 
   async loadSnapsToFeedAlgorithm(): Promise<void> {
     await new SnapRepository().loadSnapsToFeedAlgorithm();
+  }
+
+  async getSnapSample(userId : number): Promise<SnapRankSample> {
+    return await new SnapRepository().getSample(userId);
   }
 }

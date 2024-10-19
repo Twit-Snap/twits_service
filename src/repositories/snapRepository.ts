@@ -1,8 +1,9 @@
 import { RootFilterQuery } from 'mongoose';
 import { NotFoundError, ValidationError } from '../types/customErrors';
-import { Entities, GetAllParams, SnapResponse, TwitUser, RankRequest } from '../types/types';
+import { Entities, GetAllParams, SnapResponse, TwitUser, RankRequest, SnapRankSample } from '../types/types';
 import { UUID } from '../utils/uuid';
 import TwitSnap, { ISnapModel } from './models/Snap';
+import { LikeRepository } from './likeRepository';
 import axios from 'axios';
 
 export interface ISnapRepository {
@@ -111,5 +112,25 @@ export class SnapRepository implements ISnapRepository {
     };
     await axios.post(`${process.env.FEED_ALGORITHM_URL}/`, snaps_parsed);
     console.log('Snaps loaded to feed algorithm');
+  }
+
+  async getSample(userId: number): Promise<SnapRankSample> {
+    //Returns a sample of snaps from a user
+    //The sample is composed of:
+    //Last 15 snaps from the user
+    //Last 15 snaps liked by the user
+    const user_snaps = await TwitSnap.find({ 'user.userId': userId }).sort({ createdAt: -1 }).limit(15);
+    const user_liked_snaps = (await new LikeRepository().getLikesByUser(userId)).slice(0, 15);
+    const sample = [
+      ...user_snaps.map(snap => ({
+        id: snap._id,
+        content: snap.content
+      })),
+      ...user_liked_snaps.map(snap => ({
+        id: snap.id,
+        content: snap.content
+      }))
+    ];
+    return { data : sample };
   }
 }
