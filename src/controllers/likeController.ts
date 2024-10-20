@@ -26,23 +26,23 @@ export class LikeController implements ILikeController {
   }
 }
 
-// export const getLikesByTwit = async (
-//   req: Request<{ twitId: string }>,
-//   res: Response,
-//   next: NextFunction
-// ) => {
-//   try {
-//     let twitId = req.params.twitId;
+export const getLikesByTwit = async (
+  req: Request<{ twitId: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    let twitId = req.params.twitId;
 
-//     twitId = new LikeController().validateTwitId(twitId);
+    twitId = new LikeController().validateTwitId(twitId);
 
-//     const data = await new LikeService().getLikesByTwit(twitId);
+    const data = await new LikeService().getLikesByTwit(twitId);
 
-//     res.status(200).json({ data: data });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+    res.status(200).json({ data: data });
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const addLike = async (
   req: Request<{ twitId: string }>,
