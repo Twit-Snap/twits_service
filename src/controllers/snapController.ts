@@ -36,18 +36,6 @@ export class TwitController implements ITwitController {
     return content;
   }
 
-  validateUsersIds(usersIds: number[] | undefined): number[] {
-    if (!usersIds) {
-      throw new ValidationError('usersId', 'Users IDs required!');
-    }
-
-    if (!Array.isArray(usersIds)) {
-      throw new ValidationError('usersId', 'Users IDs must be an array of IDs!');
-    }
-
-    return usersIds;
-  }
-
   async getFollowedIds(user: JwtUserPayload): Promise<number[]> {
     return await axios
       .get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, {
