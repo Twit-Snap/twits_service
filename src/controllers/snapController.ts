@@ -121,6 +121,19 @@ export class TwitController implements ITwitController {
 
     return ret;
   }
+
+  async loadSnapsToFeedAlgorithm(snapsToFeed: RankRequest) {
+    await axios.post(`${process.env.FEED_ALGORITHM_URL}/`, snapsToFeed).catch(error => {
+      console.error(error.data);
+      switch (error.status) {
+        case 401:
+          throw new AuthenticationError();
+        case 500:
+          throw new ServiceUnavailable();
+      }
+    });
+    console.log('Snaps loaded to feed algorithm');
+  }
 }
 
 export const createSnap = async (
@@ -247,8 +260,11 @@ export const deleteSnapById = async (
   try {
     const { id } = req.params;
     await new SnapService().deleteSnapById(id);
+
+    const snapsToFeed = await new SnapService().loadSnapsToFeedAlgorithm();
+    await new TwitController().loadSnapsToFeedAlgorithm(snapsToFeed);
+
     res.status(204).send();
-    new SnapService().loadSnapsToFeedAlgorithm();
   } catch (error) {
     next(error);
   }

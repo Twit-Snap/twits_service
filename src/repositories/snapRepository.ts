@@ -11,7 +11,7 @@ export interface ISnapRepository {
   create(message: string, user: TwitUser, entities: Entities): Promise<SnapResponse>;
   findById(id: string): Promise<SnapResponse>;
   deleteById(id: string): Promise<void>;
-  loadSnapsToFeedAlgorithm(): Promise<void>;
+  loadSnapsToFeedAlgorithm(): Promise<RankRequest>;
 }
 
 export class SnapRepository implements ISnapRepository {
@@ -101,17 +101,15 @@ export class SnapRepository implements ISnapRepository {
     }
   }
 
-  async loadSnapsToFeedAlgorithm() : Promise<void> {
+  async loadSnapsToFeedAlgorithm() : Promise<RankRequest> {
     // Loads all snaps to feed algorithm
-    const snaps_parsed: RankRequest = {
+    return {
       data: (await TwitSnap.find({}).exec()).map((snap: ISnapModel) => ({
       id: snap._id,
       content : snap.content,
       })),
       limit: 1000
     };
-    await axios.post(`${process.env.FEED_ALGORITHM_URL}/`, snaps_parsed);
-    console.log('Snaps loaded to feed algorithm');
   }
 
   async getSample(userId: number): Promise<SnapRankSample> {

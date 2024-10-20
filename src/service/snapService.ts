@@ -4,6 +4,7 @@ import {
   Entities,
   GetAllParams,
   Hashtag,
+  RankRequest,
   SnapRankSample,
   SnapResponse,
   TwitUser
@@ -37,8 +38,8 @@ export class SnapService implements ISnapService {
     await new SnapRepository().deleteById(twitId);
   }
 
-  async loadSnapsToFeedAlgorithm(): Promise<void> {
-    await new SnapRepository().loadSnapsToFeedAlgorithm();
+  async loadSnapsToFeedAlgorithm(): Promise<RankRequest> {
+    return await new SnapRepository().loadSnapsToFeedAlgorithm();
   }
 
   async getSnapSample(userId: number): Promise<SnapRankSample> {
