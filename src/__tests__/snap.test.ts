@@ -32,7 +32,8 @@ describe('Snap API Tests', () => {
 
   beforeEach(async () => {
     await TwitSnap.deleteMany({});
-    server.listen();
+    server.listen({ onUnhandledRequest: 'bypass' });
+    server.resetHandlers();
   });
 
   describe('GET /snaps', () => {
@@ -1573,6 +1574,14 @@ describe('Snap API Tests', () => {
           hashtags: []
         }
       });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.FEED_ALGORITHM_URL}/`, () => {
+            return HttpResponse.json({}, { status: 200 });
+          })
+        ]
+      );
 
       const response = await request(app)
         .delete(`/snaps/${createdSnap.id}`)
