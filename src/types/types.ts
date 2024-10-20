@@ -2,24 +2,26 @@ export interface TwitUser {
   userId: number;
   name: string;
   username: string;
+  following?: boolean; // Auth user is following the requested user?
+  followed?: boolean; // Auth user is followed by the requested user?
   //profileImageUrl: string;
   //verified: boolean;
 }
 
 export type RankRequest = {
   data: { id: string; content: string }[];
-  limit : number;
+  limit: number;
 };
 
 export type SnapRank = {
   ranking: {
-    data : { id: string; content: string }[];
-  }
+    data: { id: string; content: string }[];
+  };
 };
 
 export type SnapRankSample = {
-  data : { id: string; content: string }[];
-}
+  data: { id: string; content: string }[];
+};
 
 export type GetAllParams = {
   older: boolean;

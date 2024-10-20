@@ -13,10 +13,10 @@ import { JwtUserPayload } from '../types/jwt';
 import {
   CreateSnapBody,
   GetAllParams,
+  RankRequest,
   SnapResponse,
   TwitUser,
-  User,
-  RankRequest
+  User
 } from '../types/types';
 import { LikeController } from './likeController';
 
@@ -69,6 +69,55 @@ export class TwitController implements ITwitController {
         }
       });
   }
+
+  async addFollowState(user: JwtUserPayload, snaps: SnapResponse[]): Promise<SnapResponse[]> {
+    const users = new Set(snaps.map(twit => twit.user.username));
+
+    const userDetails = await Promise.all(
+      [...users].map(async username => {
+        return await axios
+          .get(`${process.env.USERS_SERVICE_URL}/users/${username}`, {
+            headers: { Authorization: `Bearer ${new JWTService().sign(user)}` }
+          })
+          .then(response => {
+            return response.data.data;
+          })
+          .catch(error => {
+            console.error(error.data);
+            switch (error.status) {
+              case 400:
+                throw new ValidationError(error.response.data.field, error.response.data.detail);
+              case 401:
+                throw new AuthenticationError();
+              case 404:
+                throw new NotFoundError('username', user.username);
+              case 500:
+                throw new ServiceUnavailable();
+            }
+          });
+      })
+    );
+
+    const userMap = new Map<string, TwitUser>();
+    userDetails.forEach(user => {
+      if (user) {
+        userMap.set(user.username, user);
+      }
+    });
+
+    const ret = snaps.map(twit => ({
+      ...twit,
+      user: {
+        ...(userMap.get(twit.user.username) || twit.user),
+        followersCount: undefined,
+        followingCount: undefined,
+        birthdate: undefined,
+        createdAt: undefined
+      }
+    }));
+
+    return ret;
+  }
 }
 
 export const createSnap = async (
@@ -116,16 +165,30 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       const sample_snaps = await new SnapService().getSnapSample(user.userId);
       let sample_snaps_request: RankRequest = {
         data: sample_snaps.data,
-        limit: params.limit ? (params.limit * 3) : 15
+        limit: params.limit ? params.limit * 3 : 15
       };
-      const rank_result = await axios.post(`${process.env.FEED_ALGORITHM_URL}/rank`, sample_snaps_request);
-      rank_result.data.ranking.data = await Promise.all(rank_result.data.ranking.data.map(async (snap: SnapResponse) => await new SnapService().getSnapById(snap.id)));
-      console.log("Fetched from the algo the following Tweets for user: ", params.username, " --> ", rank_result.data.ranking.data);
+      const rank_result = await axios.post(
+        `${process.env.FEED_ALGORITHM_URL}/rank`,
+        sample_snaps_request
+      );
+      rank_result.data.ranking.data = await Promise.all(
+        rank_result.data.ranking.data.map(
+          async (snap: SnapResponse) => await new SnapService().getSnapById(snap.id)
+        )
+      );
+      console.log(
+        'Fetched from the algo the following Tweets for user: ',
+        params.username,
+        ' --> ',
+        rank_result.data.ranking.data
+      );
       snaps.push(...rank_result.data.ranking.data);
     }
 
+    const twitController = new TwitController();
+
     if (params.byFollowed) {
-      params.followedIds = await new TwitController().getFollowedIds(user);
+      params.followedIds = await twitController.getFollowedIds(user);
     }
 
     new LikeController().validateUserId(user.userId);
@@ -134,9 +197,14 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     snaps.push(...result);
 
     //Filter out duplicates returned by either of the two methods
-    snaps = snaps.filter((snap, index, self) =>
-      index === self.findIndex((t) => (t.id === snap.id)) && (!params.rank || snap.user.username !== user.username)
+    snaps = snaps.filter(
+      (snap, index, self) =>
+        index === self.findIndex(t => t.id === snap.id) &&
+        (!params.rank || snap.user.username !== user.username)
     );
+
+    //Add following / followed states
+    snaps = user.type === 'user' ? await twitController.addFollowState(user, snaps) : snaps;
 
     res.status(200).json({ data: snaps });
   } catch (error) {
