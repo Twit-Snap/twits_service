@@ -36,11 +36,19 @@ export class LikeService implements ILikeService {
 
   async addLikeInteractions(userId: number, twits: SnapResponse[]): Promise<SnapResponse[]> {
     return await Promise.all(
-      twits.map(async twit => ({
-        ...twit,
-        likesCount: await new LikeRepository().getLikesByTwit(twit.id),
-        userLiked: await new LikeRepository().getUserLikedTwit(userId, twit.id)
-      }))
+      twits.map(async twit => {
+        const userCanViewCount =
+          !twit.user.isPrivate ||
+          userId === twit.user.userId || (twit.user.following && twit.user.followed);
+
+        return {
+          ...twit,
+          userLiked: await new LikeRepository().getUserLikedTwit(userId, twit.id),
+          likesCount: userCanViewCount
+            ? await new LikeRepository().getLikesByTwit(twit.id)
+            : undefined
+        };
+      })
     );
   }
 }

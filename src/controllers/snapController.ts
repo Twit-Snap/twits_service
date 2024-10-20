@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { NextFunction, Request, Response } from 'express';
 import { JWTService } from '../service/jwtService';
+import { LikeService } from '../service/likeService';
 import { SnapService } from '../service/snapService';
 import { ITwitController } from '../types/controllerTypes';
 import {
@@ -109,6 +110,8 @@ export class TwitController implements ITwitController {
       ...twit,
       user: {
         ...(userMap.get(twit.user.username) || twit.user),
+        userId: twit.user.userId,
+        id: undefined,
         followersCount: undefined,
         followingCount: undefined,
         birthdate: undefined,
@@ -193,7 +196,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
 
     new LikeController().validateUserId(user.userId);
 
-    const result: SnapResponse[] = await new SnapService().getAllSnaps(user.userId, params);
+    const result: SnapResponse[] = await new SnapService().getAllSnaps(params);
     snaps.push(...result);
 
     //Filter out duplicates returned by either of the two methods
@@ -205,8 +208,9 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
 
     //Add following / followed states
     snaps = user.type === 'user' ? await twitController.addFollowState(user, snaps) : snaps;
+    const resultInteractions = await new LikeService().addLikeInteractions(user.userId, snaps);
 
-    res.status(200).json({ data: snaps });
+    res.status(200).json({ data: resultInteractions });
   } catch (error) {
     next(error);
   }
@@ -219,8 +223,17 @@ export const getSnapById = async (
 ) => {
   try {
     const { id } = req.params;
-    const snap: SnapResponse = await new SnapService().getSnapById(id);
-    res.status(200).json({ data: snap });
+    const user = (req as any).user;
+
+    let snap: SnapResponse = await new SnapService().getSnapById(id);
+    snap =
+      user.type === 'user' ? (await new TwitController().addFollowState(user, [snap]))[0] : snap;
+
+    const resultInteractions = (
+      await new LikeService().addLikeInteractions(user.userId, [snap])
+    )[0];
+
+    res.status(200).json({ data: resultInteractions });
   } catch (error) {
     next(error);
   }

@@ -1,7 +1,13 @@
 import { SnapRepository } from '../repositories/snapRepository';
 import { ISnapService } from '../types/servicesTypes';
-import { Entities, GetAllParams, Hashtag, SnapRankSample, SnapResponse, TwitUser } from '../types/types';
-import { LikeService } from './likeService';
+import {
+  Entities,
+  GetAllParams,
+  Hashtag,
+  SnapRankSample,
+  SnapResponse,
+  TwitUser
+} from '../types/types';
 
 export class SnapService implements ISnapService {
   private extractHashTags(content: string): Hashtag[] {
@@ -17,11 +23,9 @@ export class SnapService implements ISnapService {
     return savedSnap;
   }
 
-  async getAllSnaps(userId: number, params: GetAllParams) {
+  async getAllSnaps(params: GetAllParams) {
     const snaps: SnapResponse[] = await new SnapRepository().findAll(params);
-    const snapsInteractions = await new LikeService().addLikeInteractions(userId, snaps);
-
-    return snapsInteractions;
+    return snaps;
   }
 
   async getSnapById(twitId: string): Promise<SnapResponse> {
@@ -37,7 +41,7 @@ export class SnapService implements ISnapService {
     await new SnapRepository().loadSnapsToFeedAlgorithm();
   }
 
-  async getSnapSample(userId : number): Promise<SnapRankSample> {
+  async getSnapSample(userId: number): Promise<SnapRankSample> {
     return await new SnapRepository().getSample(userId);
   }
 }
