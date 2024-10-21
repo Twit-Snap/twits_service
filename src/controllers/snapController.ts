@@ -40,6 +40,16 @@ export class TwitController implements ITwitController {
     return usersIds;
   }
 
+  validateCreatedAt(createdAt: string | undefined) {
+    if (createdAt) {
+      const createdAtDate = new Date(createdAt);
+
+      if (isNaN(createdAtDate.getTime())) {
+        throw new ValidationError('createdAt', 'Invalid date format.');
+      }
+    }
+  }
+
   async getFollowedIds(user: JwtUserPayload): Promise<number[]> {
     return await axios
       .get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, {
@@ -109,6 +119,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       hashtag: req.query.hashtag?.toString()
     };
 
+
     const user = (req as any).user;
 
     if (params.byFollowed) {
@@ -118,6 +129,8 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     if ((req as any).user.type !== 'admin') {
       new LikeController().validateUserId(user.userId);
     }
+
+    new TwitController().validateCreatedAt(params.createdAt);
 
     const snaps: SnapResponse[] = await new SnapService().getAllSnaps(user.userId, params);
     res.status(200).json({ data: snaps });

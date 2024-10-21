@@ -14,7 +14,13 @@ const user = {
   username: 'test'
 };
 
+const admin = {
+  email: 'admin@admin.com',
+  username: 'admin'
+}
+
 const auth = new JWTService().sign({ ...user, type: 'user' });
+const authAdmin = new JWTService().sign({ ...admin, type: 'admin' });
 
 describe('Snap API Tests', () => {
   beforeAll(async () => {
@@ -571,6 +577,7 @@ describe('Snap API Tests', () => {
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ data: [] });
     });
+
     it('should return a snap if is a unique snap with the username ', async () => {
       const createdSnap = await TwitSnap.create({
         user: {
@@ -592,6 +599,7 @@ describe('Snap API Tests', () => {
       expect(snap.user.username).toEqual(createdSnap.user.username);
       expect(snap.content).toEqual(createdSnap.content);
     });
+
     it('should return an array of snaps with the same username', async () => {
       const validUsername = 'testuser';
       await TwitSnap.create({
@@ -759,6 +767,74 @@ describe('Snap API Tests', () => {
       expect(response.body.data.map((snap: SnapResponse) => snap.user.userId)).toEqual([]);
       expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([]);
       server.close();
+    })
+
+    it('should return an array of snaps with the first one equal to the position of the offset', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User',
+          username: 'TestUser2'
+        },
+        content: 'Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User',
+          username: 'TestUser3'
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app)
+        .get(`/snaps`)
+        .query({ offset: 1 })
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toHaveLength(2);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'Test snap 2',
+        'Test snap 1'
+      ]);
+    });
+
+    it('should raise 400 error with invalid Date format', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+
+      const response = await request(app)
+        .get(`/snaps`)
+        .query({ createdAt: 'invalidDateFormat' })
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Validation Error",
+        status: 400,
+        detail: "Invalid date format.",
+        instance: "/snaps?createdAt=invalidDateFormat",
+        'custom-field': "createdAt"
+      });
     });
 
     it('should pass the error received by the service on which it depends (case 400)', async () => {
@@ -1093,7 +1169,6 @@ describe('Snap API Tests', () => {
       ]);
     });
   });
-
   describe('GET /snaps/:id', () => {
     it('should raise AuthenticationError if no Authorization is specified', async () => {
       const createdSnap = await TwitSnap.create({
@@ -1214,7 +1289,6 @@ describe('Snap API Tests', () => {
       expect(snap.content).toBe('Detailed snap');
     });
   });
-
   describe('DELETE /snaps/:id', () => {
     it('should raise AuthenticationError if no Authorization is specified', async () => {
       const createdSnap = await TwitSnap.create({
@@ -1299,6 +1373,54 @@ describe('Snap API Tests', () => {
         title: 'Validation Error',
         type: 'about:blank'
       });
+    });
+  });
+  describe('getTotalAmount', () => {
+    it('should return 0 if there are no snaps', async () => {
+      const response = await request(app)
+        .get('/snaps/amount')
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toBe(0);
+    });
+
+    it('should return the total amount of snaps', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'Test snap 2'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3'
+      });
+
+      const response = await request(app)
+        .get('/snaps/amount')
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toBe(3);
     });
   });
 });
