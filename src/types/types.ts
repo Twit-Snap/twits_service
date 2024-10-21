@@ -6,6 +6,21 @@ export interface TwitUser {
   //verified: boolean;
 }
 
+export type RankRequest = {
+  data: { id: string; content: string }[];
+  limit : number;
+};
+
+export type SnapRank = {
+  ranking: {
+    data : { id: string; content: string }[];
+  }
+};
+
+export type SnapRankSample = {
+  data : { id: string; content: string }[];
+}
+
 export type GetAllParams = {
   older: boolean;
   byFollowed: boolean;
@@ -15,6 +30,7 @@ export type GetAllParams = {
   has?: string;
   username?: string;
   hashtag?: string;
+  rank?: string;
 };
 
 export type SnapResponse = {

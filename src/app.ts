@@ -7,6 +7,7 @@ import { jwtMiddleware } from './middleware/jwtMiddleware';
 import likeRoutes from './routes/likesRoutes';
 import snapRoutes from './routes/snapRoutes';
 import logger from './utils/logger';
+import { SnapService } from './service/snapService';
 
 // Función para inicializar el entorno
 function initializeEnvironment() {
@@ -53,6 +54,11 @@ export const connectToMongoDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI as string);
     logger.info('Connected to MongoDB');
+
+    //Load all snaps to feed algorithm
+    await new SnapService().loadSnapsToFeedAlgorithm();
+    console.log('Snaps loaded to feed algorithm');
+
   } catch (err) {
     logger.error('MongoDB connection error:', err);
     process.exit(1);
