@@ -2,12 +2,13 @@ import dotenv from 'dotenv';
 import express from 'express';
 import mongoose from 'mongoose';
 import path from 'path';
+import { TwitController } from './controllers/snapController';
 import { errorHandler } from './middleware/errorHandler';
 import { jwtMiddleware } from './middleware/jwtMiddleware';
 import likeRoutes from './routes/likesRoutes';
 import snapRoutes from './routes/snapRoutes';
-import logger from './utils/logger';
 import { SnapService } from './service/snapService';
+import logger from './utils/logger';
 
 // Función para inicializar el entorno
 function initializeEnvironment() {
@@ -56,8 +57,8 @@ export const connectToMongoDB = async () => {
     logger.info('Connected to MongoDB');
 
     //Load all snaps to feed algorithm
-    await new SnapService().loadSnapsToFeedAlgorithm();
-    console.log('Snaps loaded to feed algorithm');
+    const snapsToFeed = await new SnapService().loadSnapsToFeedAlgorithm();
+    await new TwitController().loadSnapsToFeedAlgorithm(snapsToFeed);
 
   } catch (err) {
     logger.error('MongoDB connection error:', err);
