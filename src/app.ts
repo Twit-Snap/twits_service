@@ -58,7 +58,9 @@ export const connectToMongoDB = async () => {
     logger.info('Connected to MongoDB');
 
     const snapsToFeed = await new SnapService().loadSnapsToFeedAlgorithm();
-    await new TwitController().loadSnapsToFeedAlgorithm(snapsToFeed);
+    if (snapsToFeed.data.length > 0) {
+      await new TwitController().loadSnapsToFeedAlgorithm(snapsToFeed);
+    }
   } catch (err) {
     logger.error('MongoDB connection error:', err);
     process.exit(1);
