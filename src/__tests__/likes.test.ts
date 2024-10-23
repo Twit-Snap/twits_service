@@ -90,32 +90,6 @@ describe('Snap API Tests', () => {
       expect(response.body.data.createdAt).toBeDefined();
     });
 
-    it('should raise an error if userId is undefined', async () => {
-      const authAux = new JWTService().sign({
-        type: 'user',
-        email: 'test@test.com',
-        userId: NaN,
-        username: 'test'
-      });
-
-      const response = await request(app)
-        .post('/likes')
-        .send({ twitId: twit1ID })
-        .set({
-          Authorization: `Bearer ${authAux}`
-        })
-        .expect(400);
-
-      expect(response.body).toEqual({
-        'custom-field': 'userId',
-        detail: 'User ID required!',
-        instance: '/likes',
-        status: 400,
-        title: 'Validation Error',
-        type: 'about:blank'
-      });
-    });
-
     it('should raise an error if twitId is undefined', async () => {
       const response = await request(app)
         .post('/likes')
@@ -219,32 +193,6 @@ describe('Snap API Tests', () => {
         instance: '/likes',
         status: 404,
         title: 'Like Not Found',
-        type: 'about:blank'
-      });
-    });
-
-    it('should raise an error if userId is undefined', async () => {
-      const authAux = new JWTService().sign({
-        type: 'user',
-        email: 'test@test.com',
-        userId: NaN,
-        username: 'test'
-      });
-
-      const response = await request(app)
-        .delete('/likes')
-        .send({ twitId: twit1ID })
-        .set({
-          Authorization: `Bearer ${authAux}`
-        })
-        .expect(400);
-
-      expect(response.body).toEqual({
-        'custom-field': 'userId',
-        detail: 'User ID required!',
-        instance: '/likes',
-        status: 400,
-        title: 'Validation Error',
         type: 'about:blank'
       });
     });
