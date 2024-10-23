@@ -19,6 +19,7 @@ import {
   TwitUser,
   User
 } from '../types/types';
+import removeDuplicates from '../utils/removeDups';
 import { LikeController } from './likeController';
 
 export class TwitController implements ITwitController {
@@ -164,7 +165,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
 
     let snaps: SnapResponse[] = [];
 
-    if (params.rank && params.username && !params.byFollowed) {
+    if (params.rank && !params.byFollowed) {
       params.limit = params.limit ? Math.floor(params.limit / 4) : 5;
       const sample_snaps = await new SnapService().getSnapSample(user.userId);
       let sample_snaps_request: RankRequest = {
@@ -182,7 +183,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       );
       console.log(
         'Fetched from the algo the following Tweets for user: ',
-        params.username,
+        user.username,
         ' --> ',
         rank_result.data.ranking.data
       );
@@ -201,11 +202,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     snaps.push(...result);
 
     //Filter out duplicates returned by either of the two methods
-    snaps = snaps.filter(
-      (snap, index, self) =>
-        index === self.findIndex(t => t.id === snap.id) &&
-        (!params.rank || snap.user.username !== user.username)
-    );
+    snaps = params.rank ? removeDuplicates(snaps) : snaps;
 
     //Add following / followed states
     snaps = user.type === 'user' ? await twitController.addFollowState(user, snaps) : snaps;
