@@ -11,7 +11,8 @@ import { UUID } from '../utils/uuid';
 const user = {
   email: 'test@test.com',
   userId: 1,
-  username: 'test'
+  username: 'test',
+  name: test
 };
 
 const admin = {
@@ -21,6 +22,8 @@ const admin = {
 
 const auth = new JWTService().sign({ ...user, type: 'user' });
 
+const server = setupServer();
+
 describe('Snap API Tests', () => {
   beforeAll(async () => {
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/test_db');
@@ -29,10 +32,13 @@ describe('Snap API Tests', () => {
   afterAll(async () => {
     await TwitSnap.deleteMany({});
     await mongoose.connection.close();
+    server.close();
   });
 
   beforeEach(async () => {
     await TwitSnap.deleteMany({});
+    server.listen({ onUnhandledRequest: 'bypass' });
+    server.resetHandlers();
   });
 
   describe('GET /snaps', () => {
@@ -674,7 +680,7 @@ describe('Snap API Tests', () => {
         content: 'Test snap 4'
       });
 
-      const server = setupServer(
+      server.resetHandlers(
         ...[
           http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
             return HttpResponse.json([
@@ -692,7 +698,6 @@ describe('Snap API Tests', () => {
           })
         ]
       );
-      server.listen();
 
       const response = await request(app)
         .get(`/snaps`)
@@ -708,7 +713,6 @@ describe('Snap API Tests', () => {
         'Test snap 4',
         'Test snap 2'
       ]);
-      server.close();
     });
 
     it('should return an empty array of snaps if the user is not follows anyone', async () => {
@@ -745,14 +749,13 @@ describe('Snap API Tests', () => {
         content: 'Test snap 4'
       });
 
-      const server = setupServer(
+      server.resetHandlers(
         ...[
           http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
             return HttpResponse.json([]);
           })
         ]
       );
-      server.listen();
 
       const response = await request(app)
         .get(`/snaps`)
@@ -765,7 +768,6 @@ describe('Snap API Tests', () => {
       expect(response.body.data).toHaveLength(0);
       expect(response.body.data.map((snap: SnapResponse) => snap.user.userId)).toEqual([]);
       expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([]);
-      server.close();
     })
 
     it('should return an array of snaps with the first one equal to the position of the offset', async () => {
@@ -870,14 +872,13 @@ describe('Snap API Tests', () => {
         content: 'Test snap 4'
       });
 
-      const server = setupServer(
+      server.resetHandlers(
         ...[
           http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
             return HttpResponse.json({ field: 'username', detail: user.username }, { status: 400 });
           })
         ]
       );
-      server.listen();
 
       const response = await request(app)
         .get(`/snaps`)
@@ -894,8 +895,6 @@ describe('Snap API Tests', () => {
         title: 'Validation Error',
         type: 'about:blank'
       });
-
-      server.close();
     });
 
     it('should pass the error received by the service on which it depends (case 401)', async () => {
@@ -932,14 +931,13 @@ describe('Snap API Tests', () => {
         content: 'Test snap 4'
       });
 
-      const server = setupServer(
+      server.resetHandlers(
         ...[
           http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
             return HttpResponse.json({}, { status: 401 });
           })
         ]
       );
-      server.listen();
 
       const response = await request(app)
         .get(`/snaps`)
@@ -955,8 +953,6 @@ describe('Snap API Tests', () => {
         title: 'Unauthorized',
         type: 'about:blank'
       });
-
-      server.close();
     });
 
     it('should pass the error received by the service on which it depends (case 404)', async () => {
@@ -993,14 +989,13 @@ describe('Snap API Tests', () => {
         content: 'Test snap 4'
       });
 
-      const server = setupServer(
+      server.resetHandlers(
         ...[
           http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
             return HttpResponse.json({}, { status: 404 });
           })
         ]
       );
-      server.listen();
 
       const response = await request(app)
         .get(`/snaps`)
@@ -1016,8 +1011,6 @@ describe('Snap API Tests', () => {
         title: 'username Not Found',
         type: 'about:blank'
       });
-
-      server.close();
     });
 
     it('should pass the error received by the service on which it depends (case 503)', async () => {
@@ -1054,7 +1047,7 @@ describe('Snap API Tests', () => {
         content: 'Test snap 4'
       });
 
-      const server = setupServer(
+      server.resetHandlers(
         ...[
           http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
             // 500, users service is down
@@ -1062,7 +1055,6 @@ describe('Snap API Tests', () => {
           })
         ]
       );
-      server.listen();
 
       const response = await request(app)
         .get(`/snaps`)
@@ -1078,8 +1070,6 @@ describe('Snap API Tests', () => {
         title: 'Service unavailable',
         type: 'about:blank'
       });
-
-      server.close();
     });
 
     it('should return an empty array when no snaps exist with said tag', async () => {
@@ -1166,6 +1156,335 @@ describe('Snap API Tests', () => {
         'Hello! Doing a #Test 2',
         'Hello! Doing a #Test 1'
       ]);
+    });
+
+    it('should return likes count if the user is public', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 255,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Hello! Doing a #Test 1',
+        entities: {
+          hashtags: [{ text: '#Test' }]
+        }
+      });
+
+      await TwitSnap.create({
+        user: {
+          userId: 256,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'Hello! Doing a #Test 2',
+        entities: {
+          hashtags: [{ text: '#Test' }]
+        }
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/testuser1`, () => {
+            return HttpResponse.json({
+              data: {
+                name: 'Test User 1',
+                id: 255,
+                username: 'testuser1',
+                isPrivate: false,
+                following: false,
+                followed: false
+              }
+            });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/testuser2`, () => {
+            return HttpResponse.json({
+              data: {
+                name: 'Test User 2',
+                id: 256,
+                username: 'testuser2',
+                isPrivate: false,
+                following: false,
+                followed: false
+              }
+            });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get('/snaps')
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(200);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'Hello! Doing a #Test 2',
+        'Hello! Doing a #Test 1'
+      ]);
+      expect(response.body.data.map((snap: SnapResponse) => snap.likesCount)).toEqual([0, 0]);
+    });
+
+    it('should not return likes count if the user is private and both users do not follow each other', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 255,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Hello! Doing a #Test 1',
+        entities: {
+          hashtags: [{ text: '#Test' }]
+        }
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/testuser1`, () => {
+            return HttpResponse.json({
+              data: {
+                name: 'Test User 1',
+                id: 255,
+                username: 'testuser1',
+                isPrivate: true,
+                following: false,
+                followed: false
+              }
+            });
+          })
+        ]
+      );
+
+      server.resetHandlers;
+
+      const response = await request(app)
+        .get('/snaps')
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(200);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'Hello! Doing a #Test 1'
+      ]);
+      expect(response.body.data.map((snap: SnapResponse) => snap.likesCount)).toEqual([undefined]);
+    });
+
+    it('should  return likes count if the user is private and both users follow each other', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 255,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Hello! Doing a #Test 1',
+        entities: {
+          hashtags: [{ text: '#Test' }]
+        }
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/testuser1`, () => {
+            return HttpResponse.json({
+              data: {
+                name: 'Test User 1',
+                id: 255,
+                username: 'testuser1',
+                isPrivate: true,
+                following: true,
+                followed: true
+              }
+            });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get('/snaps')
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(200);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'Hello! Doing a #Test 1'
+      ]);
+      expect(response.body.data.map((snap: SnapResponse) => snap.likesCount)).toEqual([0]);
+    });
+
+    it('should return likes count if the user ask for themselves when it is private or not', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: user.userId,
+          name: user.name,
+          username: user.username
+        },
+        content: 'Hello! Doing a #Test 1',
+        entities: {
+          hashtags: [{ text: '#Test' }]
+        }
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({
+              data: {
+                name: user.name,
+                id: user.userId,
+                username: user.username,
+                isPrivate: true,
+                following: false,
+                followed: false
+              }
+            });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get('/snaps')
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(200);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'Hello! Doing a #Test 1'
+      ]);
+      expect(response.body.data.map((snap: SnapResponse) => snap.likesCount)).toEqual([0]);
+    });
+
+    it('should pass the error received by the service on which it depends (case 400)', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 255,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/TestUser1`, () => {
+            return HttpResponse.json({ field: 'username', detail: user.username }, { status: 400 });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get(`/snaps`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        'custom-field': 'username',
+        detail: 'test',
+        instance: '/snaps',
+        status: 400,
+        title: 'Validation Error',
+        type: 'about:blank'
+      });
+    });
+
+    it('should pass the error received by the service on which it depends (case 401)', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 255,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/TestUser1`, () => {
+            return HttpResponse.json({}, { status: 401 });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get(`/snaps`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({
+        detail: 'Authentication error.',
+        instance: '/snaps',
+        status: 401,
+        title: 'Unauthorized',
+        type: 'about:blank'
+      });
+    });
+
+    it('should pass the error received by the service on which it depends (case 404)', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 255,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/TestUser1`, () => {
+            return HttpResponse.json({}, { status: 404 });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get(`/snaps`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        detail: 'The username with ID test was not found.',
+        instance: '/snaps',
+        status: 404,
+        title: 'username Not Found',
+        type: 'about:blank'
+      });
+    });
+
+    it('should pass the error received by the service on which it depends (case 503)', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 255,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/TestUser1`, () => {
+            // 500, users service is down
+            return HttpResponse.json({}, { status: 500 });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get(`/snaps`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(503);
+      expect(response.body).toEqual({
+        detail: 'The server is not ready to handle the request.',
+        instance: '/snaps',
+        status: 503,
+        title: 'Service unavailable',
+        type: 'about:blank'
+      });
     });
   });
   describe('GET /snaps/:id', () => {
@@ -1287,6 +1606,302 @@ describe('Snap API Tests', () => {
       expect(UUID.isValid(snap.id)).toBe(true);
       expect(snap.content).toBe('Detailed snap');
     });
+
+    it('should return likes count if the user is public', async () => {
+      const createdTwit = await TwitSnap.create({
+        user: {
+          userId: 255,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Hello! Doing a #Test 1',
+        entities: {
+          hashtags: [{ text: '#Test' }]
+        }
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/testuser1`, () => {
+            return HttpResponse.json({
+              data: {
+                name: 'Test User 1',
+                id: 255,
+                username: 'testuser1',
+                isPrivate: false,
+                following: false,
+                followed: false
+              }
+            });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get(`/snaps/${createdTwit.id}`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(200);
+      expect(response.body.data.content).toEqual('Hello! Doing a #Test 1');
+      expect(response.body.data.likesCount).toEqual(0);
+    });
+
+    it('should not return likes count if the user is private and both users do not follow each other', async () => {
+      const createdTwit = await TwitSnap.create({
+        user: {
+          userId: 255,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Hello! Doing a #Test 1',
+        entities: {
+          hashtags: [{ text: '#Test' }]
+        }
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/testuser1`, () => {
+            return HttpResponse.json({
+              data: {
+                name: 'Test User 1',
+                id: 255,
+                username: 'testuser1',
+                isPrivate: true,
+                following: false,
+                followed: false
+              }
+            });
+          })
+        ]
+      );
+
+      server.resetHandlers;
+
+      const response = await request(app)
+        .get(`/snaps/${createdTwit.id}`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(200);
+      expect(response.body.data.content).toEqual('Hello! Doing a #Test 1');
+      expect(response.body.data.likesCount).toEqual(undefined);
+    });
+
+    it('should  return likes count if the user is private and both users follow each other', async () => {
+      const createdTwit = await TwitSnap.create({
+        user: {
+          userId: 255,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Hello! Doing a #Test 1',
+        entities: {
+          hashtags: [{ text: '#Test' }]
+        }
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/testuser1`, () => {
+            return HttpResponse.json({
+              data: {
+                name: 'Test User 1',
+                id: 255,
+                username: 'testuser1',
+                isPrivate: true,
+                following: true,
+                followed: true
+              }
+            });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get(`/snaps/${createdTwit.id}`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(200);
+      expect(response.body.data.content).toEqual('Hello! Doing a #Test 1');
+      expect(response.body.data.likesCount).toEqual(0);
+    });
+
+    it('should return likes count if the user ask for themselves when it is private or not', async () => {
+      const createdTwit = await TwitSnap.create({
+        user: {
+          userId: user.userId,
+          name: user.name,
+          username: user.username
+        },
+        content: 'Hello! Doing a #Test 1',
+        entities: {
+          hashtags: [{ text: '#Test' }]
+        }
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({
+              data: {
+                name: user.name,
+                id: user.userId,
+                username: user.username,
+                isPrivate: true,
+                following: false,
+                followed: false
+              }
+            });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get(`/snaps/${createdTwit.id}`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(200);
+      expect(response.body.data.content).toEqual('Hello! Doing a #Test 1');
+      expect(response.body.data.likesCount).toEqual(0);
+    });
+
+    it('should pass the error received by the service on which it depends (case 400)', async () => {
+      const createdTwit = await TwitSnap.create({
+        user: {
+          userId: 255,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/TestUser1`, () => {
+            return HttpResponse.json({ field: 'username', detail: user.username }, { status: 400 });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get(`/snaps/${createdTwit.id}`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        'custom-field': 'username',
+        detail: 'test',
+        instance: `/snaps/${createdTwit.id}`,
+        status: 400,
+        title: 'Validation Error',
+        type: 'about:blank'
+      });
+    });
+
+    it('should pass the error received by the service on which it depends (case 401)', async () => {
+      const createdTwit = await TwitSnap.create({
+        user: {
+          userId: 255,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/TestUser1`, () => {
+            return HttpResponse.json({}, { status: 401 });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get(`/snaps/${createdTwit.id}`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({
+        detail: 'Authentication error.',
+        instance: `/snaps/${createdTwit.id}`,
+        status: 401,
+        title: 'Unauthorized',
+        type: 'about:blank'
+      });
+    });
+
+    it('should pass the error received by the service on which it depends (case 404)', async () => {
+      const createdTwit = await TwitSnap.create({
+        user: {
+          userId: 255,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/TestUser1`, () => {
+            return HttpResponse.json({}, { status: 404 });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get(`/snaps/${createdTwit.id}`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        detail: 'The username with ID test was not found.',
+        instance: `/snaps/${createdTwit.id}`,
+        status: 404,
+        title: 'username Not Found',
+        type: 'about:blank'
+      });
+    });
+
+    it('should pass the error received by the service on which it depends (case 503)', async () => {
+      const createdTwit = await TwitSnap.create({
+        user: {
+          userId: 255,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/TestUser1`, () => {
+            // 500, users service is down
+            return HttpResponse.json({}, { status: 500 });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get(`/snaps/${createdTwit.id}`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(503);
+      expect(response.body).toEqual({
+        detail: 'The server is not ready to handle the request.',
+        instance: `/snaps/${createdTwit.id}`,
+        status: 503,
+        title: 'Service unavailable',
+        type: 'about:blank'
+      });
+    });
   });
   describe('DELETE /snaps/:id', () => {
     it('should raise AuthenticationError if no Authorization is specified', async () => {
@@ -1325,6 +1940,14 @@ describe('Snap API Tests', () => {
           hashtags: []
         }
       });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.FEED_ALGORITHM_URL}/`, () => {
+            return HttpResponse.json({}, { status: 200 });
+          })
+        ]
+      );
 
       const response = await request(app)
         .delete(`/snaps/${createdSnap.id}`)
@@ -1370,6 +1993,79 @@ describe('Snap API Tests', () => {
         instance: '/snaps/invalid-id-format',
         status: 400,
         title: 'Validation Error',
+        type: 'about:blank'
+      });
+    });
+
+    it('should pass the error received by the service on which it depends (case 401)', async () => {
+      const createdSnap = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User',
+          username: 'testuser'
+        },
+        content: 'Test twit to delete',
+        entities: {
+          hashtags: []
+        }
+      });
+
+      server.resetHandlers(
+        ...[
+          http.post(`${process.env.FEED_ALGORITHM_URL}/`, () => {
+            return HttpResponse.json({}, { status: 401 });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .delete(`/snaps/${createdSnap.id}`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({
+        detail: 'Authentication error.',
+        instance: `/snaps/${createdSnap.id}`,
+        status: 401,
+        title: 'Unauthorized',
+        type: 'about:blank'
+      });
+    });
+
+    it('should pass the error received by the service on which it depends (case 503)', async () => {
+      const createdSnap = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User',
+          username: 'testuser'
+        },
+        content: 'Test twit to delete',
+        entities: {
+          hashtags: []
+        }
+      });
+
+      server.resetHandlers(
+        ...[
+          http.post(`${process.env.FEED_ALGORITHM_URL}/`, () => {
+            // 500, users service is down
+            return HttpResponse.json({}, { status: 500 });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .delete(`/snaps/${createdSnap.id}`)
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(503);
+      expect(response.body).toEqual({
+        detail: 'The server is not ready to handle the request.',
+        instance: `/snaps/${createdSnap.id}`,
+        status: 503,
+        title: 'Service unavailable',
         type: 'about:blank'
       });
     });

@@ -1,8 +1,10 @@
 import { RootFilterQuery } from 'mongoose';
 import { NotFoundError, ValidationError } from '../types/customErrors';
-import { Entities, GetAllParams, SnapResponse, TwitUser } from '../types/types';
+import { Entities, GetAllParams, SnapResponse, TwitUser, RankRequest, SnapRankSample } from '../types/types';
 import { UUID } from '../utils/uuid';
 import TwitSnap, { ISnapModel } from './models/Snap';
+import { LikeRepository } from './likeRepository';
+import axios from 'axios';
 
 export interface ISnapRepository {
   findAll(params: GetAllParams): Promise<SnapResponse[]>;
@@ -10,8 +12,8 @@ export interface ISnapRepository {
   findById(id: string): Promise<SnapResponse>;
   deleteById(id: string): Promise<void>;
   totalAmount(params: GetAllParams): Promise<number>;
-
-} 
+  loadSnapsToFeedAlgorithm(): Promise<RankRequest>;
+}
 
 export class SnapRepository implements ISnapRepository {
   async create(content: string, user: TwitUser, entities: Entities): Promise<SnapResponse> {
@@ -130,5 +132,36 @@ export class SnapRepository implements ISnapRepository {
     const result = await TwitSnap.countDocuments(filter);
 
     return result;
+  }
+
+  async loadSnapsToFeedAlgorithm() : Promise<RankRequest> {
+    // Loads all snaps to feed algorithm
+    return {
+      data: (await TwitSnap.find({}).exec()).map((snap: ISnapModel) => ({
+        id: snap._id,
+        content : snap.content,
+      })),
+      limit: 1000
+    };
+  }
+
+  async getSample(userId: number): Promise<SnapRankSample> {
+    //Returns a sample of snaps from a user
+    //The sample is composed of:
+    //Last 15 snaps from the user
+    //Last 15 snaps liked by the user
+    const user_snaps = await TwitSnap.find({ 'user.userId': userId }).sort({ createdAt: -1 }).limit(15);
+    const user_liked_snaps = (await new LikeRepository().getLikesByUser(userId)).slice(0, 15);
+    const sample = [
+      ...user_snaps.map(snap => ({
+        id: snap._id,
+        content: snap.content
+      })),
+      ...user_liked_snaps.map(snap => ({
+        id: snap.id,
+        content: snap.content
+      }))
+    ];
+    return { data : sample };
   }
 }
