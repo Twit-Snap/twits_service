@@ -16,14 +16,6 @@ export class LikeController implements ILikeController {
 
     return twitId;
   }
-
-  validateUserId(userId: number | undefined): number {
-    if (!userId) {
-      throw new ValidationError('userId', 'User ID required!');
-    }
-
-    return userId;
-  }
 }
 
 export const getLikesByTwit = async (
@@ -56,8 +48,6 @@ export const addLike = async (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
 
-    new LikeController().validateUserId(user.userId);
-
     const data = await new LikeService().addLike(user.userId, twitId);
 
     res.status(201).json({ data: data });
@@ -78,8 +68,6 @@ export const removeLike = async (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
 
-    new LikeController().validateUserId(user.userId);
-
     await new LikeService().removeLike(user.userId, twitId);
     res.status(204).send();
   } catch (error) {
@@ -91,8 +79,6 @@ export const getLikesByUser = async (req: Request, res: Response, next: NextFunc
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
-
-    new LikeController().validateUserId(user.userId);
 
     const data = await new LikeService().getLikesByUser(user.userId);
 

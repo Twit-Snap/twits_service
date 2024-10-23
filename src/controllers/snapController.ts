@@ -20,7 +20,6 @@ import {
   User
 } from '../types/types';
 import removeDuplicates from '../utils/removeDups';
-import { LikeController } from './likeController';
 
 export class TwitController implements ITwitController {
   validateContent(content: string | undefined): string {
@@ -227,10 +226,6 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
 
     if (params.byFollowed) {
       params.followedIds = await twitController.getFollowedIds(user);
-    }
-
-    if ((req as any).user.type !== 'admin') {
-      new LikeController().validateUserId(user.userId);
     }
 
     new TwitController().validateCreatedAt(params.createdAt);
