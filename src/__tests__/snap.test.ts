@@ -15,10 +15,10 @@ const user = {
   name: test
 };
 
-const admin = {
-  email: 'admin@admin.com',
-  username: 'admin'
-}
+// const admin = {
+//   email: 'admin@admin.com',
+//   username: 'admin'
+// };
 
 const auth = new JWTService().sign({ ...user, type: 'user' });
 
@@ -768,7 +768,7 @@ describe('Snap API Tests', () => {
       expect(response.body.data).toHaveLength(0);
       expect(response.body.data.map((snap: SnapResponse) => snap.user.userId)).toEqual([]);
       expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([]);
-    })
+    });
 
     it('should return an array of snaps with the first one equal to the position of the offset', async () => {
       await TwitSnap.create({
@@ -829,12 +829,12 @@ describe('Snap API Tests', () => {
         });
       expect(response.status).toBe(400);
       expect(response.body).toEqual({
-        type: "about:blank",
-        title: "Validation Error",
+        type: 'about:blank',
+        title: 'Validation Error',
         status: 400,
-        detail: "Invalid date format.",
-        instance: "/snaps?createdAt=invalidDateFormat",
-        'custom-field': "createdAt"
+        detail: 'Invalid date format.',
+        instance: '/snaps?createdAt=invalidDateFormat',
+        'custom-field': 'createdAt'
       });
     });
 
@@ -1254,8 +1254,6 @@ describe('Snap API Tests', () => {
           })
         ]
       );
-
-      server.resetHandlers;
 
       const response = await request(app)
         .get('/snaps')
@@ -1677,7 +1675,6 @@ describe('Snap API Tests', () => {
         ]
       );
 
-      server.resetHandlers;
 
       const response = await request(app)
         .get(`/snaps/${createdTwit.id}`)

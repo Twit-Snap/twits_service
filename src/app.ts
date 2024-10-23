@@ -35,6 +35,7 @@ function initializeEnvironment() {
 
 initializeEnvironment();
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const cors = require('cors');
 const app = express();
 

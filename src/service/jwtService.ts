@@ -11,6 +11,7 @@ export class JWTService implements IJWTService {
     return jwt.sign(
       payload,
       this.secret,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (payload as any).exp ? undefined : { expiresIn: this.expiresIn }
     );
   }

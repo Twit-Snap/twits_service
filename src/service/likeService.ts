@@ -39,7 +39,8 @@ export class LikeService implements ILikeService {
       twits.map(async twit => {
         const userCanViewCount =
           !twit.user.isPrivate ||
-          userId === twit.user.userId || (twit.user.following && twit.user.followed);
+          userId === twit.user.userId ||
+          (twit.user.following && twit.user.followed);
 
         return {
           ...twit,

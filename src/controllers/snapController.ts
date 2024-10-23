@@ -37,8 +37,6 @@ export class TwitController implements ITwitController {
     return content;
   }
 
-
-
   validateCreatedAt(createdAt: string | undefined) {
     if (createdAt) {
       const createdAtDate = new Date(createdAt);
@@ -138,10 +136,7 @@ export class TwitController implements ITwitController {
 }
 
 export const getTotalAmount = async (req: Request, res: Response, next: NextFunction) => {
-
-
   try {
-
     var params: GetAllParams = {
       createdAt: req.query.createdAt?.toString(),
       limit: undefined,
@@ -149,7 +144,7 @@ export const getTotalAmount = async (req: Request, res: Response, next: NextFunc
       older: false,
       has: req.query.has ? req.query.has.toString() : '',
       username: req.query.username?.toString(),
-      byFollowed:  false,
+      byFollowed: false,
       hashtag: req.query.hashtag?.toString()
     };
 
@@ -198,8 +193,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       hashtag: req.query.hashtag?.toString(),
       rank: req.query.rank?.toString()
     };
-
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
 
     let snaps: SnapResponse[] = [];
@@ -264,6 +258,7 @@ export const getSnapById = async (
 ) => {
   try {
     const { id } = req.params;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
 
     let snap: SnapResponse = await new SnapService().getSnapById(id);
@@ -297,4 +292,3 @@ export const deleteSnapById = async (
     next(error);
   }
 };
-

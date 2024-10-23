@@ -1,10 +1,16 @@
 import { RootFilterQuery } from 'mongoose';
 import { NotFoundError, ValidationError } from '../types/customErrors';
-import { Entities, GetAllParams, SnapResponse, TwitUser, RankRequest, SnapRankSample } from '../types/types';
+import {
+  Entities,
+  GetAllParams,
+  RankRequest,
+  SnapRankSample,
+  SnapResponse,
+  TwitUser
+} from '../types/types';
 import { UUID } from '../utils/uuid';
-import TwitSnap, { ISnapModel } from './models/Snap';
 import { LikeRepository } from './likeRepository';
-import axios from 'axios';
+import TwitSnap, { ISnapModel } from './models/Snap';
 
 export interface ISnapRepository {
   findAll(params: GetAllParams): Promise<SnapResponse[]>;
@@ -104,7 +110,6 @@ export class SnapRepository implements ISnapRepository {
   }
 
   async totalAmount(params: GetAllParams): Promise<number> {
-
     var filter: RootFilterQuery<ISnapModel> = { content: { $regex: params.has, $options: 'miu' } };
 
     if (params.createdAt) {
@@ -128,18 +133,17 @@ export class SnapRepository implements ISnapRepository {
       };
     }
 
-
     const result = await TwitSnap.countDocuments(filter);
 
     return result;
   }
 
-  async loadSnapsToFeedAlgorithm() : Promise<RankRequest> {
+  async loadSnapsToFeedAlgorithm(): Promise<RankRequest> {
     // Loads all snaps to feed algorithm
     return {
       data: (await TwitSnap.find({}).exec()).map((snap: ISnapModel) => ({
         id: snap._id,
-        content : snap.content,
+        content: snap.content
       })),
       limit: 1000
     };
@@ -150,7 +154,9 @@ export class SnapRepository implements ISnapRepository {
     //The sample is composed of:
     //Last 15 snaps from the user
     //Last 15 snaps liked by the user
-    const user_snaps = await TwitSnap.find({ 'user.userId': userId }).sort({ createdAt: -1 }).limit(15);
+    const user_snaps = await TwitSnap.find({ 'user.userId': userId })
+      .sort({ createdAt: -1 })
+      .limit(15);
     const user_liked_snaps = (await new LikeRepository().getLikesByUser(userId)).slice(0, 15);
     const sample = [
       ...user_snaps.map(snap => ({
@@ -162,6 +168,6 @@ export class SnapRepository implements ISnapRepository {
         content: snap.content
       }))
     ];
-    return { data : sample };
+    return { data: sample };
   }
 }
