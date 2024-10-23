@@ -75,8 +75,24 @@ export class TwitController implements ITwitController {
 }
 
 export const getTotalAmount = async (req: Request, res: Response, next: NextFunction) => {
+
+
   try {
-    const totalAmount = await new SnapService().getTotalAmount();
+
+    var params: GetAllParams = {
+      createdAt: req.query.createdAt?.toString(),
+      limit: undefined,
+      offset: undefined,
+      older: false,
+      has: req.query.has ? req.query.has.toString() : '',
+      username: req.query.username?.toString(),
+      byFollowed:  false,
+      hashtag: req.query.hashtag?.toString()
+    };
+
+    new TwitController().validateCreatedAt(params.createdAt);
+
+    const totalAmount = await new SnapService().getTotalAmount(params);
     res.status(200).json({ data: totalAmount });
   } catch (error) {
     next(error);

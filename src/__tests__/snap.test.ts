@@ -20,7 +20,6 @@ const admin = {
 }
 
 const auth = new JWTService().sign({ ...user, type: 'user' });
-const authAdmin = new JWTService().sign({ ...admin, type: 'admin' });
 
 describe('Snap API Tests', () => {
   beforeAll(async () => {

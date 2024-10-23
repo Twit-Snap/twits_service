@@ -33,7 +33,7 @@ export class SnapService implements ISnapService {
     await new SnapRepository().deleteById(twitId);
   }
 
-  async getTotalAmount(): Promise<number> {
-    return await new SnapRepository().totalAmount();
+  async getTotalAmount(params: GetAllParams): Promise<number> {
+    return await new SnapRepository().totalAmount(params);
   }
 }

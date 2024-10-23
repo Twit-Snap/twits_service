@@ -9,7 +9,7 @@ export interface ISnapRepository {
   create(message: string, user: TwitUser, entities: Entities): Promise<SnapResponse>;
   findById(id: string): Promise<SnapResponse>;
   deleteById(id: string): Promise<void>;
-  totalAmount(): Promise<number>;
+  totalAmount(params: GetAllParams): Promise<number>;
 
 } 
 
@@ -101,8 +101,34 @@ export class SnapRepository implements ISnapRepository {
     }
   }
 
-  async totalAmount(): Promise<number> {
-    const result = await TwitSnap.countDocuments();
+  async totalAmount(params: GetAllParams): Promise<number> {
+
+    var filter: RootFilterQuery<ISnapModel> = { content: { $regex: params.has, $options: 'miu' } };
+
+    if (params.createdAt) {
+      filter = {
+        ...filter,
+        createdAt: params.older ? { $lt: params.createdAt } : { $gt: params.createdAt }
+      };
+    }
+
+    if (params.username) {
+      filter = {
+        ...filter,
+        'user.username': { $in: params.username }
+      };
+    }
+
+    if (params.followedIds) {
+      filter = {
+        ...filter,
+        'user.userId': { $in: params.followedIds }
+      };
+    }
+
+
+    const result = await TwitSnap.countDocuments(filter);
+
     return result;
   }
 }

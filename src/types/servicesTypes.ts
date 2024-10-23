@@ -5,7 +5,7 @@ export interface ISnapService {
   getAllSnaps(userId: number, params: GetAllParams): Promise<SnapResponse[]>;
   getSnapById(twitId: string): Promise<SnapResponse>;
   deleteSnapById(twitId: string): Promise<void>;
-  getTotalAmount(): Promise<number>;
+  getTotalAmount(params: GetAllParams): Promise<number>;
 }
 
 export interface ILikeService {
