@@ -37,6 +37,18 @@ export class TwitController implements ITwitController {
     return content;
   }
 
+
+
+  validateCreatedAt(createdAt: string | undefined) {
+    if (createdAt) {
+      const createdAtDate = new Date(createdAt);
+
+      if (isNaN(createdAtDate.getTime())) {
+        throw new ValidationError('createdAt', 'Invalid date format.');
+      }
+    }
+  }
+
   async getFollowedIds(user: JwtUserPayload): Promise<number[]> {
     return await axios
       .get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, {
@@ -125,6 +137,31 @@ export class TwitController implements ITwitController {
   }
 }
 
+export const getTotalAmount = async (req: Request, res: Response, next: NextFunction) => {
+
+
+  try {
+
+    var params: GetAllParams = {
+      createdAt: req.query.createdAt?.toString(),
+      limit: undefined,
+      offset: undefined,
+      older: false,
+      has: req.query.has ? req.query.has.toString() : '',
+      username: req.query.username?.toString(),
+      byFollowed:  false,
+      hashtag: req.query.hashtag?.toString()
+    };
+
+    new TwitController().validateCreatedAt(params.createdAt);
+
+    const totalAmount = await new SnapService().getTotalAmount(params);
+    res.status(200).json({ data: totalAmount });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createSnap = async (
   req: Request<{}, {}, CreateSnapBody>,
   res: Response,
@@ -153,6 +190,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     var params: GetAllParams = {
       createdAt: req.query.createdAt?.toString(),
       limit: req.query.limit ? +req.query.limit.toString() : 20,
+      offset: req.query.offset ? +req.query.offset.toString() : 0,
       older: req.query.older === 'true',
       has: req.query.has ? req.query.has.toString() : '',
       username: req.query.username?.toString(),
@@ -160,6 +198,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       hashtag: req.query.hashtag?.toString(),
       rank: req.query.rank?.toString()
     };
+
 
     const user = (req as any).user;
 
@@ -196,7 +235,11 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       params.followedIds = await twitController.getFollowedIds(user);
     }
 
-    new LikeController().validateUserId(user.userId);
+    if ((req as any).user.type !== 'admin') {
+      new LikeController().validateUserId(user.userId);
+    }
+
+    new TwitController().validateCreatedAt(params.createdAt);
 
     const result: SnapResponse[] = await new SnapService().getAllSnaps(params);
     snaps.push(...result);
@@ -254,3 +297,4 @@ export const deleteSnapById = async (
     next(error);
   }
 };
+

@@ -29,6 +29,7 @@ export type GetAllParams = {
   byFollowed: boolean;
   followedIds?: number[];
   limit?: number;
+  offset?: number;
   createdAt?: string;
   has?: string;
   username?: string;

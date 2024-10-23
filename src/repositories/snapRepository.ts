@@ -11,6 +11,7 @@ export interface ISnapRepository {
   create(message: string, user: TwitUser, entities: Entities): Promise<SnapResponse>;
   findById(id: string): Promise<SnapResponse>;
   deleteById(id: string): Promise<void>;
+  totalAmount(params: GetAllParams): Promise<number>;
   loadSnapsToFeedAlgorithm(): Promise<RankRequest>;
 }
 
@@ -65,6 +66,7 @@ export class SnapRepository implements ISnapRepository {
 
     const snaps = await TwitSnap.find(filter)
       .sort({ createdAt: -1 })
+      .skip(params.offset ? params.offset : 0)
       .limit(params.limit ? params.limit : 20);
 
     return snaps.map(snap => ({
@@ -101,12 +103,43 @@ export class SnapRepository implements ISnapRepository {
     }
   }
 
+  async totalAmount(params: GetAllParams): Promise<number> {
+
+    var filter: RootFilterQuery<ISnapModel> = { content: { $regex: params.has, $options: 'miu' } };
+
+    if (params.createdAt) {
+      filter = {
+        ...filter,
+        createdAt: params.older ? { $lt: params.createdAt } : { $gt: params.createdAt }
+      };
+    }
+
+    if (params.username) {
+      filter = {
+        ...filter,
+        'user.username': { $in: params.username }
+      };
+    }
+
+    if (params.followedIds) {
+      filter = {
+        ...filter,
+        'user.userId': { $in: params.followedIds }
+      };
+    }
+
+
+    const result = await TwitSnap.countDocuments(filter);
+
+    return result;
+  }
+
   async loadSnapsToFeedAlgorithm() : Promise<RankRequest> {
     // Loads all snaps to feed algorithm
     return {
       data: (await TwitSnap.find({}).exec()).map((snap: ISnapModel) => ({
-      id: snap._id,
-      content : snap.content,
+        id: snap._id,
+        content : snap.content,
       })),
       limit: 1000
     };
