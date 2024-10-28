@@ -49,4 +49,12 @@ export class SnapService implements ISnapService {
   async getSnapSample(userId: number): Promise<SnapRankSample> {
     return await new SnapRepository().getSample(userId);
   }
+
+  async editSnapById(twitId: string, content: string): Promise<SnapResponse> {
+    const entities: Entities = {
+      hashtags: this.extractHashTags(content)
+    };
+    const snap: SnapResponse = await new SnapRepository().editById(twitId, content, entities);
+    return snap;
+  }
 }

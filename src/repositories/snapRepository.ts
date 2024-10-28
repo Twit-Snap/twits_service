@@ -170,4 +170,25 @@ export class SnapRepository implements ISnapRepository {
     ];
     return { data: sample };
   }
+
+  async editById(id: string, edited_content: string, entities: Entities): Promise<SnapResponse> {
+    if (!UUID.isValid(id)) {
+      throw new ValidationError('id', 'Invalid UUID');
+    }
+
+    const snap = await TwitSnap.findById(id);
+    if (!snap) {
+      throw new NotFoundError('Snap', id);
+    }
+
+    snap.content = edited_content;
+    snap.entities = entities;
+    await snap.save();
+    return {
+      id: snap._id,
+      user: snap.user,
+      content: snap.content,
+      createdAt: snap.createdAt
+    };
+  }
 }
