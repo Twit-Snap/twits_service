@@ -144,7 +144,8 @@ export const getTotalAmount = async (req: Request, res: Response, next: NextFunc
       has: req.query.has ? req.query.has.toString() : '',
       username: req.query.username?.toString(),
       byFollowed: false,
-      hashtag: req.query.hashtag?.toString()
+      hashtag: req.query.hashtag?.toString(),
+      exactDate: req.query.exactDate === 'true'
     };
 
     new TwitController().validateCreatedAt(params.createdAt);
@@ -190,7 +191,8 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       username: req.query.username?.toString(),
       byFollowed: req.query.byFollowed === 'true',
       hashtag: req.query.hashtag?.toString(),
-      rank: req.query.rank?.toString()
+      rank: req.query.rank?.toString(),
+      exactDate: req.query.exactDate === 'true'
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
