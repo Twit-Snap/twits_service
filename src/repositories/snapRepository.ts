@@ -42,12 +42,7 @@ export class SnapRepository implements ISnapRepository {
   async findAll(params: GetAllParams): Promise<SnapResponse[]> {
     var filter: RootFilterQuery<ISnapModel> = { content: { $regex: params.has, $options: 'miu' } };
 
-    if (params.createdAt) {
-      filter = {
-        ...filter,
-        createdAt: params.older ? { $lt: params.createdAt } : { $gt: params.createdAt }
-      };
-    }
+    filter = this.filterSnapByDate(params, filter);
 
     if (params.username) {
       filter = {
@@ -109,27 +104,59 @@ export class SnapRepository implements ISnapRepository {
     }
   }
 
+  private filterSnapByDate(params: GetAllParams, filter: RootFilterQuery<ISnapModel>) {
+      if (params.createdAt) {
+        if (params.exactDate) {
+          const year = params.createdAt.substring(0, 4);
+          const month = params.createdAt.substring(5, 7).padStart(2, '0');
+          const day = params.createdAt.substring(8, 10).padStart(2, '0');
+
+          const nextMoth = (parseInt(month) % 12 + 1).toString().padStart(2, '0');
+          const nextYear = (parseInt(month) === 12 ? (parseInt(year) + 1).toString() : year);
+
+          if (params.createdAt.length === 4) {
+            filter = {
+              ...filter,
+              createdAt: { $gte: `${year}-01-01T00:00:00.000Z`, $lt: `${parseInt(year) + 1}-01-01T00:00:00.000Z` }
+            };
+          } else if (params.createdAt.length === 7) {
+            filter = {
+              ...filter,
+              createdAt: {
+                $gte: `${year}-${month}-01T00:00:00.000Z`,
+                $lt: `${nextYear}-${nextMoth}-01T00:00:00.000Z`
+              }
+            };
+          } else if (params.createdAt.length >= 10) {
+            filter = {
+              ...filter,
+              createdAt: {
+                $gte: `${year}-${month}-${day}T00:00:00.000Z`,
+                $lt: `${nextYear}-${month}-${(parseInt(day) + 1).toString().padStart(2, '0')}T00:00:00.000Z`
+              }
+            };
+          }
+        } else {
+          filter = {
+            ...filter,
+            createdAt: params.older ? { $lt: params.createdAt } : { $gt: params.createdAt }
+          };
+        }
+      }
+      return filter;
+  }
+
+
+
   async totalAmount(params: GetAllParams): Promise<number> {
     var filter: RootFilterQuery<ISnapModel> = { content: { $regex: params.has, $options: 'miu' } };
 
-    if (params.createdAt) {
-      filter = {
-        ...filter,
-        createdAt: params.older ? { $lt: params.createdAt } : { $gt: params.createdAt }
-      };
-    }
+    filter = this.filterSnapByDate(params, filter);
 
     if (params.username) {
       filter = {
         ...filter,
         'user.username': { $in: params.username }
-      };
-    }
-
-    if (params.followedIds) {
-      filter = {
-        ...filter,
-        'user.userId': { $in: params.followedIds }
       };
     }
 

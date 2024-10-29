@@ -35,6 +35,7 @@ export type GetAllParams = {
   username?: string;
   hashtag?: string;
   rank?: string;
+  exactDate?: boolean;
 };
 
 export type SnapResponse = {
