@@ -90,7 +90,8 @@ export class SnapRepository implements ISnapRepository {
       id: snap._id,
       user: snap.user,
       content: snap.content,
-      createdAt: snap.createdAt
+      createdAt: snap.createdAt,
+      entities: snap.entities
     };
   }
 
