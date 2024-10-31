@@ -1900,6 +1900,7 @@ describe('Snap API Tests', () => {
       });
     });
   });
+
   describe('DELETE /snaps/:id', () => {
     it('should raise AuthenticationError if no Authorization is specified', async () => {
       const createdSnap = await TwitSnap.create({
@@ -2113,6 +2114,93 @@ describe('Snap API Tests', () => {
         .expect(200);
 
       expect(response.body.data).toBe(3);
+    });
+  });
+
+  describe('PATCH /snaps/:id', () => {
+    it('should raise AuthenticationError if no Authorization is specified', async () => {
+      const createdSnap = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User',
+          username: 'testuser'
+        },
+        content: 'Test snap',
+        entities: {
+          hashtags: []
+        }
+      });
+
+      const response = await request(app).patch(`/snaps/${createdSnap.id}`).send({ content: 'Updated content' });
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({
+        detail: 'Authentication error.',
+        instance: `/snaps/${createdSnap.id}`,
+        status: 401,
+        title: 'Unauthorized',
+        type: 'about:blank'
+      });
+    });
+
+    it('should update a snap when given a valid ID and Authorization', async () => {
+      const createdSnap = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User',
+          username: 'testuser'
+        },
+        content: 'Test snap',
+        entities: {
+          hashtags: []
+        }
+      });
+
+      const response = await request(app)
+        .patch(`/snaps/${createdSnap.id}`)
+        .set({ Authorization: `Bearer ${auth}` })
+        .send({ content: 'Updated content' });
+
+      expect(response.status).toBe(204);
+
+      const updatedSnap = await TwitSnap.findById(createdSnap.id);
+      expect(updatedSnap?.content).toBe('Updated content');
+    });
+
+    it('should return 404 when given a non-existent ID', async () => {
+      const nonExistentId = 'e0462215-9238-4919-a4e0-0be725d7ed57';
+
+      const response = await request(app)
+        .patch(`/snaps/${nonExistentId}`)
+        .set({ Authorization: `Bearer ${auth}` })
+        .send({ content: 'Updated content' });
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        detail: 'The Snap with ID e0462215-9238-4919-a4e0-0be725d7ed57 was not found.',
+        instance: `/snaps/${nonExistentId}`,
+        status: 404,
+        title: 'Snap Not Found',
+        type: 'about:blank'
+      });
+    });
+
+    it('should return 400 when given an invalid ID format', async () => {
+      const invalidId = 'invalid-id-format';
+
+      const response = await request(app)
+        .patch(`/snaps/${invalidId}`)
+        .set({ Authorization: `Bearer ${auth}` })
+        .send({ content: 'Updated content' });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        'custom-field': 'id',
+        detail: 'Invalid UUID',
+        instance: `/snaps/${invalidId}`,
+        status: 400,
+        title: 'Validation Error',
+        type: 'about:blank'
+      });
     });
   });
 });
