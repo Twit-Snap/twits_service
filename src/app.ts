@@ -5,6 +5,7 @@ import path from 'path';
 import { TwitController } from './controllers/snapController';
 import { errorHandler } from './middleware/errorHandler';
 import { jwtMiddleware } from './middleware/jwtMiddleware';
+import { logMiddleware } from './middleware/logMiddleware';
 import likeRoutes from './routes/likesRoutes';
 import snapRoutes from './routes/snapRoutes';
 import { SnapService } from './service/snapService';
@@ -42,6 +43,8 @@ const app = express();
 //CORS middleware
 app.use(cors());
 app.use(express.json());
+app.use(logMiddleware);
+
 app.use(jwtMiddleware);
 
 // Routes
