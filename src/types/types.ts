@@ -36,7 +36,13 @@ export type GetAllParams = {
   hashtag?: string;
   rank?: string;
   exactDate?: boolean;
+  withEntities?: boolean;
 };
+
+export type GetByIdParams = {
+  withEntities?: boolean;
+};
+
 
 export type SnapResponse = {
   id: string;
