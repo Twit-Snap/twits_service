@@ -3,8 +3,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import path from 'path';
 import { TwitController } from './controllers/snapController';
+import { authMiddleware } from './middleware/authMiddleware';
 import { errorHandler } from './middleware/errorHandler';
-import { jwtMiddleware } from './middleware/jwtMiddleware';
 import { logMiddleware } from './middleware/logMiddleware';
 import likeRoutes from './routes/likesRoutes';
 import snapRoutes from './routes/snapRoutes';
@@ -45,7 +45,7 @@ app.use(cors());
 app.use(express.json());
 app.use(logMiddleware);
 
-app.use(jwtMiddleware);
+app.use(authMiddleware);
 
 // Routes
 app.use('/snaps', snapRoutes);
