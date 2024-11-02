@@ -19,7 +19,7 @@ import {
   TwitUser,
   User
 } from '../types/types';
-import removeDuplicates from '../utils/removeDups';
+import removeDuplicates from '../utils/removeDups/removeDups';
 
 export class TwitController implements ITwitController {
   validateContent(content: string | undefined): string {
