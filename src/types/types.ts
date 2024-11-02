@@ -14,6 +14,14 @@ export type RankRequest = {
   limit: number;
 };
 
+export type TrendingTopicsRequest = {
+  limit : number;
+};
+
+export type TrendingTopics = {
+  data : string[];
+}
+
 export type SnapRank = {
   ranking: {
     data: { id: string; content: string }[];
