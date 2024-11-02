@@ -1,16 +1,16 @@
 import axios from 'axios';
 import { NextFunction, Request, Response } from 'express';
-import { JWTService } from '../service/jwtService';
+import { JWTService } from '../../service/jwtService';
 import {
   AuthenticationError,
   BlockedError,
   NotFoundError,
   ServiceUnavailable,
   ValidationError
-} from '../types/customErrors';
-import { JwtCustomPayload } from '../types/jwt';
+} from '../../types/customErrors';
+import { JwtCustomPayload } from '../../types/jwt';
 
-const decodeToken = (authHeader: string | undefined): JwtCustomPayload => {
+export const decodeToken = (authHeader: string | undefined): JwtCustomPayload => {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (token == null) {
@@ -22,7 +22,7 @@ const decodeToken = (authHeader: string | undefined): JwtCustomPayload => {
   return jwtService.verify(token) as JwtCustomPayload;
 };
 
-const checkBlockedUser = async (decodedToken: JwtCustomPayload) => {
+export const checkBlockedUser = async (decodedToken: JwtCustomPayload) => {
   if (decodedToken.type === 'admin') {
     return;
   }

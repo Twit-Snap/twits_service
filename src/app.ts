@@ -3,7 +3,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import path from 'path';
 import { TwitController } from './controllers/snapController';
-import { authMiddleware } from './middleware/authMiddleware';
+import { authMiddleware } from './middleware/authMiddleware/authMiddleware';
 import { errorHandler } from './middleware/errorHandler';
 import { logMiddleware } from './middleware/logMiddleware';
 import likeRoutes from './routes/likesRoutes';
@@ -12,7 +12,7 @@ import { SnapService } from './service/snapService';
 import logger from './utils/logger';
 
 // Función para inicializar el entorno
-function initializeEnvironment() {
+export function initializeEnvironment() {
   // Determine environment
 
   const env = process.env.NODE_ENV || 'development';
