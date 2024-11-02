@@ -29,6 +29,13 @@ export class AuthenticationError extends Error {
   }
 }
 
+export class BlockedError extends Error {
+  constructor() {
+    super('Blocked error');
+    this.name = 'BlockedError';
+  }
+}
+
 export class ServiceUnavailable extends Error {
   constructor() {
     super('Service Unavailable error');
