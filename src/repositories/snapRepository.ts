@@ -112,7 +112,8 @@ export class SnapRepository implements ISnapRepository {
     if (result.deletedCount === 0) {
       throw new NotFoundError('Snap', id);
     }
-    await Like.deleteMany({ twitId: id }); //Cascade
+    await Like.deleteMany({ twitId: id }); // Cascade
+    await TwitSnap.deleteMany({ parent: id }); // Cascade
   }
 
   private filterSnapByDate(params: GetAllParams, filter: RootFilterQuery<ISnapModel>) {
