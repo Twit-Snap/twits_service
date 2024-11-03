@@ -2,7 +2,8 @@ import { RootFilterQuery } from 'mongoose';
 import { NotFoundError, ValidationError } from '../types/customErrors';
 import {
   Entities,
-  GetAllParams, GetByIdParams,
+  GetAllParams,
+  GetByIdParams,
   RankRequest,
   SnapRankSample,
   SnapResponse,
@@ -10,6 +11,7 @@ import {
 } from '../types/types';
 import { UUID } from '../utils/uuid';
 import { LikeRepository } from './likeRepository';
+import Like from './models/Like';
 import TwitSnap, { ISnapModel } from './models/Snap';
 
 export interface ISnapRepository {
@@ -94,7 +96,7 @@ export class SnapRepository implements ISnapRepository {
       createdAt: snap.createdAt
     };
 
-    if(params?.withEntities){
+    if (params?.withEntities) {
       response.entities = snap.entities;
     }
     return response;
@@ -108,51 +110,53 @@ export class SnapRepository implements ISnapRepository {
     if (result.deletedCount === 0) {
       throw new NotFoundError('Snap', id);
     }
+    await Like.deleteMany({ twitId: id }); //Cascade
   }
 
   private filterSnapByDate(params: GetAllParams, filter: RootFilterQuery<ISnapModel>) {
-      if (params.createdAt) {
-        if (params.exactDate) {
-          const year = params.createdAt.substring(0, 4);
-          const month = params.createdAt.substring(5, 7).padStart(2, '0');
-          const day = params.createdAt.substring(8, 10).padStart(2, '0');
+    if (params.createdAt) {
+      if (params.exactDate) {
+        const year = params.createdAt.substring(0, 4);
+        const month = params.createdAt.substring(5, 7).padStart(2, '0');
+        const day = params.createdAt.substring(8, 10).padStart(2, '0');
 
-          const nextMoth = (parseInt(month) % 12 + 1).toString().padStart(2, '0');
-          const nextYear = (parseInt(month) === 12 ? (parseInt(year) + 1).toString() : year);
+        const nextMoth = ((parseInt(month) % 12) + 1).toString().padStart(2, '0');
+        const nextYear = parseInt(month) === 12 ? (parseInt(year) + 1).toString() : year;
 
-          if (params.createdAt.length === 4) {
-            filter = {
-              ...filter,
-              createdAt: { $gte: `${year}-01-01T00:00:00.000Z`, $lt: `${parseInt(year) + 1}-01-01T00:00:00.000Z` }
-            };
-          } else if (params.createdAt.length === 7) {
-            filter = {
-              ...filter,
-              createdAt: {
-                $gte: `${year}-${month}-01T00:00:00.000Z`,
-                $lt: `${nextYear}-${nextMoth}-01T00:00:00.000Z`
-              }
-            };
-          } else if (params.createdAt.length >= 10) {
-            filter = {
-              ...filter,
-              createdAt: {
-                $gte: `${year}-${month}-${day}T00:00:00.000Z`,
-                $lt: `${nextYear}-${month}-${(parseInt(day) + 1).toString().padStart(2, '0')}T00:00:00.000Z`
-              }
-            };
-          }
-        } else {
+        if (params.createdAt.length === 4) {
           filter = {
             ...filter,
-            createdAt: params.older ? { $lt: params.createdAt } : { $gt: params.createdAt }
+            createdAt: {
+              $gte: `${year}-01-01T00:00:00.000Z`,
+              $lt: `${parseInt(year) + 1}-01-01T00:00:00.000Z`
+            }
+          };
+        } else if (params.createdAt.length === 7) {
+          filter = {
+            ...filter,
+            createdAt: {
+              $gte: `${year}-${month}-01T00:00:00.000Z`,
+              $lt: `${nextYear}-${nextMoth}-01T00:00:00.000Z`
+            }
+          };
+        } else if (params.createdAt.length >= 10) {
+          filter = {
+            ...filter,
+            createdAt: {
+              $gte: `${year}-${month}-${day}T00:00:00.000Z`,
+              $lt: `${nextYear}-${month}-${(parseInt(day) + 1).toString().padStart(2, '0')}T00:00:00.000Z`
+            }
           };
         }
+      } else {
+        filter = {
+          ...filter,
+          createdAt: params.older ? { $lt: params.createdAt } : { $gt: params.createdAt }
+        };
       }
-      return filter;
+    }
+    return filter;
   }
-
-
 
   async totalAmount(params: GetAllParams): Promise<number> {
     var filter: RootFilterQuery<ISnapModel> = { content: { $regex: params.has, $options: 'miu' } };
