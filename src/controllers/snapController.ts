@@ -27,6 +27,9 @@ export class TwitController implements ITwitController {
     if (!content) {
       throw new ValidationError('content', 'The TwitSnap content is required.');
     }
+
+    content = content.trim();
+
     if (content.length > 280) {
       throw new ValidationError(
         content,
@@ -359,7 +362,7 @@ export const editSnapById = async (
   try {
     const { id } = req.params;
     let edited_content: string | undefined = req.body.content;
-    
+
     edited_content = new TwitController().validateContent(edited_content);
     await new SnapService().editSnapById(id, edited_content);
 
