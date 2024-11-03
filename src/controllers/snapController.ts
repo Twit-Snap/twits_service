@@ -12,9 +12,10 @@ import {
 } from '../types/customErrors';
 import { JwtUserPayload } from '../types/jwt';
 import {
-  CreateSnapBody,
-  GetAllParams, GetByIdParams,
+  GetAllParams,
+  GetByIdParams,
   RankRequest,
+  SnapBody,
   SnapResponse,
   TwitUser,
   User
@@ -34,6 +35,53 @@ export class TwitController implements ITwitController {
     }
 
     return content;
+  }
+
+  validateTwitType(type: string, content: string | undefined, parent: string | undefined): string {
+    switch (type) {
+      case 'retwit':
+        if (!parent) {
+          throw new ValidationError('parent', 'Can not retwit if no parent is provided');
+        }
+        return '';
+
+      case 'comment':
+        if (!parent) {
+          throw new ValidationError('parent', 'Can not comment if no parent is provided');
+        }
+        return this.validateContent(content);
+
+      case 'original':
+        if (parent) {
+          throw new ValidationError(
+            'parent',
+            'Can not create a new original tweet if parent is provided'
+          );
+        }
+        return this.validateContent(content);
+
+      default:
+        throw new ValidationError(
+          'type',
+          `${type} is not a valid type it must be 'retwit', 'comment' or 'original'`
+        );
+    }
+  }
+
+  validateTwitUser(user: TwitUser | undefined): TwitUser {
+    if (!user?.name) {
+      throw new ValidationError('user.name', 'User name must be specified');
+    }
+
+    if (!user?.username) {
+      throw new ValidationError('user.username', 'User username must be specified');
+    }
+
+    if (!user?.userId) {
+      throw new ValidationError('user.userId', 'User ID must be specified');
+    }
+
+    return user;
   }
 
   validateCreatedAt(createdAt: string | undefined) {
@@ -158,22 +206,29 @@ export const getTotalAmount = async (req: Request, res: Response, next: NextFunc
 };
 
 export const createSnap = async (
-  req: Request<{}, {}, CreateSnapBody>,
+  req: Request<{}, {}, SnapBody>,
   res: Response,
   next: NextFunction
 ) => {
   try {
     let content: string | undefined = req.body.content;
+    const type: string = req.body.type || 'original';
+    const parent = req.body.parent;
 
-    content = new TwitController().validateContent(content);
+    const controller = new TwitController();
 
-    const user: TwitUser = {
-      userId: req.body.authorId,
-      name: req.body.authorName,
-      username: req.body.authorUsername
+    content = controller.validateTwitType(type, content, parent);
+
+    const user = controller.validateTwitUser(req.body.user);
+
+    const snapBody = {
+      content: content,
+      type: type,
+      parent: parent,
+      user: user
     };
 
-    const savedSnap: SnapResponse = await new SnapService().createSnap(content, user);
+    const savedSnap: SnapResponse = await new SnapService().createSnap(snapBody);
     res.status(201).json({ data: savedSnap });
   } catch (error) {
     next(error);
@@ -213,7 +268,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       );
       rank_result.data.ranking.data = await Promise.all(
         rank_result.data.ranking.data.map(
-          async (snap: SnapResponse) => await new SnapService().getSnapById(snap.id,params)
+          async (snap: SnapResponse) => await new SnapService().getSnapById(snap.id, params)
         )
       );
       console.log(
@@ -261,7 +316,6 @@ export const getSnapById = async (
       withEntities: req.query.withEntities === 'true'
     };
 
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
 
@@ -298,14 +352,14 @@ export const deleteSnapById = async (
 };
 
 export const editSnapById = async (
-  req: Request<{ id: string }, {}, CreateSnapBody>,
+  req: Request<{ id: string }, {}, SnapBody>,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { id } = req.params;
     let edited_content: string | undefined = req.body.content;
-
+    
     edited_content = new TwitController().validateContent(edited_content);
     await new SnapService().editSnapById(id, edited_content);
 

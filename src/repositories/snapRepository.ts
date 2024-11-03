@@ -5,9 +5,9 @@ import {
   GetAllParams,
   GetByIdParams,
   RankRequest,
+  SnapBody,
   SnapRankSample,
-  SnapResponse,
-  TwitUser
+  SnapResponse
 } from '../types/types';
 import { UUID } from '../utils/uuid';
 import { LikeRepository } from './likeRepository';
@@ -16,7 +16,7 @@ import TwitSnap, { ISnapModel } from './models/Snap';
 
 export interface ISnapRepository {
   findAll(params: GetAllParams): Promise<SnapResponse[]>;
-  create(message: string, user: TwitUser, entities: Entities): Promise<SnapResponse>;
+  create(snapBody: SnapBody): Promise<SnapResponse>;
   findById(id: string, params?: GetByIdParams): Promise<SnapResponse>;
   deleteById(id: string): Promise<void>;
   totalAmount(params: GetAllParams): Promise<number>;
@@ -24,12 +24,14 @@ export interface ISnapRepository {
 }
 
 export class SnapRepository implements ISnapRepository {
-  async create(content: string, user: TwitUser, entities: Entities): Promise<SnapResponse> {
+  async create(snapBody: SnapBody): Promise<SnapResponse> {
     const snap = new TwitSnap({
       _id: UUID.generate(),
-      content,
-      user,
-      entities,
+      content: snapBody.content,
+      user: snapBody.user,
+      entities: snapBody.entities,
+      parent: snapBody.parent,
+      type: snapBody.type,
       createdAt: new Date().toISOString()
     });
     const savedSnap = await snap.save();
@@ -80,7 +82,7 @@ export class SnapRepository implements ISnapRepository {
     }));
   }
 
-  async findById(id: string, params?: GetByIdParams | GetAllParams): Promise<SnapResponse> {
+  async findById(id: string, params?: GetByIdParams): Promise<SnapResponse> {
     if (!UUID.isValid(id)) {
       throw new ValidationError('id', 'Invalid UUID');
     }

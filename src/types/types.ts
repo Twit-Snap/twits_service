@@ -43,7 +43,6 @@ export type GetByIdParams = {
   withEntities?: boolean;
 };
 
-
 export type SnapResponse = {
   id: string;
   user: TwitUser;
@@ -60,11 +59,12 @@ export type LikeResponse = {
   createdAt: string;
 };
 
-export type CreateSnapBody = {
+export type SnapBody = {
   content: string;
-  authorId: number;
-  authorName: string;
-  authorUsername: string;
+  user: TwitUser;
+  type: string;
+  parent: string;
+  entities?: Entities;
 };
 
 export interface TwitSnap {

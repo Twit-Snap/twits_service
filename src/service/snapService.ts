@@ -6,9 +6,9 @@ import {
   GetByIdParams,
   Hashtag,
   RankRequest,
+  SnapBody,
   SnapRankSample,
-  SnapResponse,
-  TwitUser
+  SnapResponse
 } from '../types/types';
 
 export class SnapService implements ISnapService {
@@ -17,11 +17,22 @@ export class SnapService implements ISnapService {
     return hashTags ? hashTags.map(tag => ({ text: tag })) : [];
   }
 
-  async createSnap(content: string, user: TwitUser): Promise<SnapResponse> {
+  private validateParent(parent: string | undefined) {
+    if (!parent) {
+      return;
+    }
+
+    this.getSnapById(parent); // repository validation
+  }
+
+  async createSnap(snapBody: SnapBody): Promise<SnapResponse> {
+    this.validateParent(snapBody.parent);
+
     const entities: Entities = {
-      hashtags: this.extractHashTags(content)
+      hashtags: this.extractHashTags(snapBody.content)
     };
-    const savedSnap: SnapResponse = await new SnapRepository().create(content, user, entities);
+
+    const savedSnap: SnapResponse = await new SnapRepository().create({ ...snapBody, entities });
     return savedSnap;
   }
 
@@ -30,7 +41,7 @@ export class SnapService implements ISnapService {
     return snaps;
   }
 
-  async getSnapById(twitId: string, params: GetByIdParams | GetAllParams): Promise<SnapResponse> {
+  async getSnapById(twitId: string, params?: GetByIdParams): Promise<SnapResponse> {
     const snap: SnapResponse = await new SnapRepository().findById(twitId, params);
     return snap;
   }
