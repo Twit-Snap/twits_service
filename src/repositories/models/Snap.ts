@@ -3,6 +3,7 @@ import { UUID } from '../../utils/uuid';
 
 export interface ISnapModel extends Document {
   _id: string;
+  parent: string;
   createdAt: string;
   user: {
     userId: number;
@@ -13,11 +14,14 @@ export interface ISnapModel extends Document {
     hashtags: { text: string }[];
   };
   content: string;
+  type: string;
 }
 
 const TwitSnapSchema: Schema = new Schema(
   {
     _id: { type: String, default: UUID.generate },
+    parent: { type: String, default: null },
+    type: { type: String, default: 'original' },
     content: { type: String, required: true },
     user: {
       userId: { type: Number, required: true },
