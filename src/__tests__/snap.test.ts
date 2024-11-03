@@ -1675,7 +1675,6 @@ describe('Snap API Tests', () => {
         ]
       );
 
-
       const response = await request(app)
         .get(`/snaps/${createdTwit.id}`)
         .set({
