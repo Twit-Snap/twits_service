@@ -2022,6 +2022,52 @@ describe('Snap API Tests', () => {
         expect(response.body.data.likesCount).toEqual(0);
       });
 
+      it('should return entities if withEntities is true', async () => {
+        const createdTwit = await TwitSnap.create({
+          user: {
+            userId: 255,
+            name: 'Test User 1',
+            username: 'testuser1'
+          },
+          content: 'Hello! Doing a #Test 1',
+          entities: {
+            hashtags: [{ text: '#Test' }]
+          }
+        });
+
+        const response = await request(app)
+          .get(`/snaps/${createdTwit.id}`)
+          .query({ withEntities: true })
+          .set({
+            Authorization: `Bearer ${auth}`
+          });
+        expect(response.status).toBe(200);
+        expect(response.body.data.entities.hashtags[0].text).toEqual('#Test');
+      });
+
+      it('should not return entities if withEntities is false', async () => {
+        const createdTwit = await TwitSnap.create({
+          user: {
+            userId: 255,
+            name: 'Test User 1',
+            username: 'testuser1'
+          },
+          content: 'Hello! Doing a #Test 1',
+          entities: {
+            hashtags: [{ text: '#Test' }]
+          }
+        });
+
+        const response = await request(app)
+          .get(`/snaps/${createdTwit.id}`)
+          .query({ withEntities: false })
+          .set({
+            Authorization: `Bearer ${auth}`
+          });
+        expect(response.status).toBe(200);
+        expect(response.body.data.entities).toBeUndefined();
+      });
+
       it('should pass the error received by the service on which it depends (case 400)', async () => {
         const createdTwit = await TwitSnap.create({
           user: {
@@ -2155,6 +2201,7 @@ describe('Snap API Tests', () => {
           type: 'about:blank'
         });
       });
+
     });
     describe('DELETE /snaps/:id', () => {
       it('should raise AuthenticationError if no Authorization is specified', async () => {

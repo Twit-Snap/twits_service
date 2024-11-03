@@ -2,7 +2,7 @@ import { RootFilterQuery } from 'mongoose';
 import { NotFoundError, ValidationError } from '../types/customErrors';
 import {
   Entities,
-  GetAllParams,
+  GetAllParams, GetByIdParams,
   RankRequest,
   SnapRankSample,
   SnapResponse,
@@ -15,7 +15,7 @@ import TwitSnap, { ISnapModel } from './models/Snap';
 export interface ISnapRepository {
   findAll(params: GetAllParams): Promise<SnapResponse[]>;
   create(message: string, user: TwitUser, entities: Entities): Promise<SnapResponse>;
-  findById(id: string): Promise<SnapResponse>;
+  findById(id: string, params?: GetByIdParams): Promise<SnapResponse>;
   deleteById(id: string): Promise<void>;
   totalAmount(params: GetAllParams): Promise<number>;
   loadSnapsToFeedAlgorithm(): Promise<RankRequest>;
@@ -78,7 +78,7 @@ export class SnapRepository implements ISnapRepository {
     }));
   }
 
-  async findById(id: string): Promise<SnapResponse> {
+  async findById(id: string, params?: GetByIdParams | GetAllParams): Promise<SnapResponse> {
     if (!UUID.isValid(id)) {
       throw new ValidationError('id', 'Invalid UUID');
     }
@@ -86,12 +86,18 @@ export class SnapRepository implements ISnapRepository {
     if (!snap) {
       throw new NotFoundError('Snap', id);
     }
-    return {
+
+    let response: SnapResponse = {
       id: snap._id,
       user: snap.user,
       content: snap.content,
       createdAt: snap.createdAt
     };
+
+    if(params?.withEntities){
+      response.entities = snap.entities;
+    }
+    return response;
   }
 
   async deleteById(id: string): Promise<void> {
