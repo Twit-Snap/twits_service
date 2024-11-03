@@ -35,7 +35,14 @@ export type GetAllParams = {
   username?: string;
   hashtag?: string;
   rank?: string;
+  exactDate?: boolean;
+  withEntities?: boolean;
 };
+
+export type GetByIdParams = {
+  withEntities?: boolean;
+};
+
 
 export type SnapResponse = {
   id: string;
@@ -44,6 +51,7 @@ export type SnapResponse = {
   createdAt: string;
   likesCount?: number;
   userLiked?: boolean;
+  entities?: Entities;
 };
 
 export type LikeResponse = {

@@ -3,6 +3,7 @@ import { ISnapService } from '../types/servicesTypes';
 import {
   Entities,
   GetAllParams,
+  GetByIdParams,
   Hashtag,
   RankRequest,
   SnapRankSample,
@@ -29,8 +30,8 @@ export class SnapService implements ISnapService {
     return snaps;
   }
 
-  async getSnapById(twitId: string): Promise<SnapResponse> {
-    const snap: SnapResponse = await new SnapRepository().findById(twitId);
+  async getSnapById(twitId: string, params: GetByIdParams | GetAllParams): Promise<SnapResponse> {
+    const snap: SnapResponse = await new SnapRepository().findById(twitId, params);
     return snap;
   }
 
@@ -48,5 +49,13 @@ export class SnapService implements ISnapService {
 
   async getSnapSample(userId: number): Promise<SnapRankSample> {
     return await new SnapRepository().getSample(userId);
+  }
+
+  async editSnapById(twitId: string, content: string): Promise<SnapResponse> {
+    const entities: Entities = {
+      hashtags: this.extractHashTags(content)
+    };
+    const snap: SnapResponse = await new SnapRepository().editById(twitId, content, entities);
+    return snap;
   }
 }

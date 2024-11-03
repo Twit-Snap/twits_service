@@ -361,7 +361,6 @@ describe('Snap API Tests', () => {
         'hello Test snap 2'
       ]);
     });
-
     it('should return all items if has param is undefined', async () => {
       await TwitSnap.create({
         user: {
@@ -809,6 +808,258 @@ describe('Snap API Tests', () => {
         'Test snap 2',
         'Test snap 1'
       ]);
+    });
+
+    it('should return snaps created at the given date', async () => {
+      const aDate = new Date(2024, 10, 28);
+      const anotherDate = new Date(2024, 10, 29);
+      const cmpDate = '2024-11-28';
+
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'Test snap 2',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3',
+        createdAt: anotherDate
+      });
+
+      const response = await request(app)
+        .get('/snaps')
+        .query({
+          createdAt: cmpDate,
+          exactDate: 'true'
+        })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(2);
+      response.body.data.forEach((snap: { createdAt: string }) => {
+        expect(snap.createdAt.startsWith(cmpDate)).toBe(true);
+      });
+    });
+
+    it('should return snaps that match with the same year', async () => {
+      const aDate = new Date(2024, 10, 28);
+      const anotherDate = new Date(2024, 10, 29);
+      console.log(aDate.toISOString());
+      const cmpDate = '2024';
+
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'Test snap 2',
+        createdAt: anotherDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3',
+        createdAt: anotherDate
+      });
+
+      const response = await request(app)
+        .get('/snaps')
+        .query({
+          createdAt: cmpDate,
+          exactDate: 'true'
+        })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(3);
+      response.body.data.forEach((snap: { createdAt: string }) => {
+        expect(snap.createdAt.startsWith(cmpDate)).toBe(true);
+      });
+    });
+
+    it('should return snaps that match with the same month', async () => {
+      const aDate = new Date(2024, 10, 27); //November
+      const anotherDate = new Date(2024, 11, 2);
+      console.log(aDate.toISOString());
+      const cmpDate = '2024-11'; //November
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1',
+        createdAt: aDate
+      });
+
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'Test snap 2',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3',
+        createdAt: anotherDate
+      });
+
+      const response = await request(app)
+        .get('/snaps')
+        .query({
+          createdAt: cmpDate,
+          exactDate: 'true'
+        })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(2);
+      response.body.data.forEach((snap: { createdAt: string }) => {
+        expect(snap.createdAt.startsWith(cmpDate)).toBe(true);
+      });
+    });
+
+    it('should return snaps that match with the same day', async () => {
+      const aDate = new Date(2024, 10, 27);
+      const anotherDate = new Date(2024, 10, 28);
+      const cmpDate = '2024-11-27';
+
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'Test snap 2',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3',
+        createdAt: anotherDate
+      });
+
+      const response = await request(app)
+        .get('/snaps')
+        .query({
+          createdAt: cmpDate,
+          exactDate: 'true'
+        })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(2);
+      response.body.data.forEach((snap: { createdAt: string }) => {
+        expect(snap.createdAt.startsWith(cmpDate)).toBe(true);
+      });
+    });
+
+    it('should return snaps between  december 2024 and january 2025', async () => {
+      const aDate = new Date(2024, 11, 24);
+      const anotherDate = new Date(2025, 0, 12);
+      const cmpDate = '2024-12';
+
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'Test snap 2',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3',
+        createdAt: anotherDate
+      });
+
+      const response = await request(app)
+        .get('/snaps')
+        .query({
+          createdAt: cmpDate,
+          exactDate: 'true'
+        })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(2);
+      response.body.data.forEach((snap: { createdAt: string }) => {
+        expect(snap.createdAt.startsWith(cmpDate)).toBe(true);
+      });
     });
 
     it('should raise 400 error with invalid Date format', async () => {
@@ -1765,6 +2016,52 @@ describe('Snap API Tests', () => {
       expect(response.body.data.likesCount).toEqual(0);
     });
 
+    it('should return entities if withEntities is true', async () => {
+      const createdTwit = await TwitSnap.create({
+        user: {
+          userId: 255,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Hello! Doing a #Test 1',
+        entities: {
+          hashtags: [{ text: '#Test' }]
+        }
+      });
+
+      const response = await request(app)
+        .get(`/snaps/${createdTwit.id}`)
+        .query({ withEntities: true })
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(200);
+      expect(response.body.data.entities.hashtags[0].text).toEqual('#Test');
+    });
+
+    it('should not return entities if withEntities is false', async () => {
+      const createdTwit = await TwitSnap.create({
+        user: {
+          userId: 255,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Hello! Doing a #Test 1',
+        entities: {
+          hashtags: [{ text: '#Test' }]
+        }
+      });
+
+      const response = await request(app)
+        .get(`/snaps/${createdTwit.id}`)
+        .query({ withEntities: false })
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(200);
+      expect(response.body.data.entities).toBeUndefined();
+    });
+
     it('should pass the error received by the service on which it depends (case 400)', async () => {
       const createdTwit = await TwitSnap.create({
         user: {
@@ -1899,6 +2196,7 @@ describe('Snap API Tests', () => {
       });
     });
   });
+
   describe('DELETE /snaps/:id', () => {
     it('should raise AuthenticationError if no Authorization is specified', async () => {
       const createdSnap = await TwitSnap.create({
@@ -2112,6 +2410,318 @@ describe('Snap API Tests', () => {
         .expect(200);
 
       expect(response.body.data).toBe(3);
+    });
+
+    it('should raise 400 error with invalid Date format', async () => {
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User',
+          username: 'TestUser1'
+        },
+        content: 'Test snap 1'
+      });
+
+      const response = await request(app)
+        .get(`/snaps/amount`)
+        .query({ createdAt: 'invalidDateFormat' })
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        type: 'about:blank',
+        title: 'Validation Error',
+        status: 400,
+        detail: 'Invalid date format.',
+        instance: '/snaps/amount?createdAt=invalidDateFormat',
+        'custom-field': 'createdAt'
+      });
+    });
+    it('should return the total amount of snaps created at the given date', async () => {
+      const aDate = new Date(2024, 10, 28);
+      const anotherDate = new Date(2024, 10, 29);
+      const cmpDate = '2024-11-28';
+
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'Test snap 2',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3',
+        createdAt: anotherDate
+      });
+
+      const response = await request(app)
+        .get('/snaps/amount')
+        .query({
+          createdAt: cmpDate,
+          exactDate: 'true'
+        })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toBe(2);
+    });
+
+    it('should return the total amount of snaps created after the given date', async () => {
+      const aDate = new Date(2024, 10, 28);
+      const anotherDate = new Date(2024, 10, 29);
+
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'Test snap 2',
+        createdAt: anotherDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3',
+        createdAt: anotherDate
+      });
+
+      const response = await request(app)
+        .get('/snaps/amount')
+        .query({
+          createdAt: aDate.toISOString(),
+          exactDate: 'false'
+        })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toBe(2);
+    });
+
+    it('should return the total amount of snaps that match with the same year', async () => {
+      const aDate = new Date(2024, 10, 28);
+      const anotherDate = new Date(2024, 10, 29);
+      console.log(aDate.toISOString());
+      const cmpDate = '2024';
+
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'Test snap 2',
+        createdAt: anotherDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3',
+        createdAt: anotherDate
+      });
+
+      const response = await request(app)
+        .get('/snaps/amount')
+        .query({
+          createdAt: cmpDate,
+          exactDate: 'true'
+        })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toBe(3);
+    });
+
+    it('should return the total amount of snaps that match with the same month', async () => {
+      const aDate = new Date(2024, 10, 27); //November
+      const anotherDate = new Date(2024, 11, 2);
+      console.log(aDate.toISOString());
+      const cmpDate = '2024-11'; //November
+
+      const twit = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1',
+        createdAt: aDate
+      });
+
+      console.log('twit create at ', twit.createdAt);
+
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'Test snap 2',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3',
+        createdAt: anotherDate
+      });
+
+      const response = await request(app)
+        .get('/snaps/amount')
+        .query({
+          createdAt: cmpDate,
+          exactDate: 'true'
+        })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toBe(2);
+    });
+
+    it('should return the total amount of snaps that match with the same day', async () => {
+      const aDate = new Date(2024, 10, 27);
+      const anotherDate = new Date(2024, 10, 28);
+      const cmpDate = '2024-11-27';
+
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'Test snap 2',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3',
+        createdAt: anotherDate
+      });
+
+      const response = await request(app)
+        .get('/snaps/amount')
+        .query({
+          createdAt: cmpDate,
+          exactDate: 'true'
+        })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toBe(2);
+    });
+
+    it('should return the total amount of snaps between  december 2024 and january 2025', async () => {
+      const aDate = new Date(2024, 11, 24);
+      const anotherDate = new Date(2025, 0, 12);
+      const cmpDate = '2024-12';
+
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: 'testuser2'
+        },
+        content: 'Test snap 2',
+        createdAt: aDate
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: 'testuser3'
+        },
+        content: 'Test snap 3',
+        createdAt: anotherDate
+      });
+
+      const response = await request(app)
+        .get('/snaps/amount')
+        .query({
+          createdAt: cmpDate,
+          exactDate: 'true'
+        })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toBe(2);
     });
   });
 });
