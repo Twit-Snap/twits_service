@@ -13,7 +13,7 @@ import {
 import { JwtUserPayload } from '../types/jwt';
 import {
   CreateSnapBody,
-  GetAllParams,
+  GetAllParams, GetByIdParams,
   RankRequest,
   SnapResponse,
   TwitUser,
@@ -144,7 +144,8 @@ export const getTotalAmount = async (req: Request, res: Response, next: NextFunc
       has: req.query.has ? req.query.has.toString() : '',
       username: req.query.username?.toString(),
       byFollowed: false,
-      hashtag: req.query.hashtag?.toString()
+      hashtag: req.query.hashtag?.toString(),
+      exactDate: req.query.exactDate === 'true'
     };
 
     new TwitController().validateCreatedAt(params.createdAt);
@@ -190,7 +191,9 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       username: req.query.username?.toString(),
       byFollowed: req.query.byFollowed === 'true',
       hashtag: req.query.hashtag?.toString(),
-      rank: req.query.rank?.toString()
+      rank: req.query.rank?.toString(),
+      exactDate: req.query.exactDate === 'true',
+      withEntities: req.query.withEntities === 'true'
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
@@ -210,7 +213,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       );
       rank_result.data.ranking.data = await Promise.all(
         rank_result.data.ranking.data.map(
-          async (snap: SnapResponse) => await new SnapService().getSnapById(snap.id)
+          async (snap: SnapResponse) => await new SnapService().getSnapById(snap.id,params)
         )
       );
       console.log(
@@ -253,10 +256,16 @@ export const getSnapById = async (
 ) => {
   try {
     const { id } = req.params;
+
+    const params: GetByIdParams = {
+      withEntities: req.query.withEntities === 'true'
+    };
+
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
 
-    let snap: SnapResponse = await new SnapService().getSnapById(id);
+    let snap: SnapResponse = await new SnapService().getSnapById(id, params);
     snap =
       user.type === 'user' ? (await new TwitController().addFollowState(user, [snap]))[0] : snap;
 
