@@ -1,17 +1,19 @@
+/* istanbul ignore file */
 import dotenv from 'dotenv';
 import express from 'express';
 import mongoose from 'mongoose';
 import path from 'path';
 import { TwitController } from './controllers/snapController';
+import { authMiddleware } from './middleware/authMiddleware/authMiddleware';
 import { errorHandler } from './middleware/errorHandler';
-import { jwtMiddleware } from './middleware/jwtMiddleware';
+import { logMiddleware } from './middleware/logMiddleware';
 import likeRoutes from './routes/likesRoutes';
 import snapRoutes from './routes/snapRoutes';
 import { SnapService } from './service/snapService';
 import logger from './utils/logger';
 
 // Función para inicializar el entorno
-function initializeEnvironment() {
+export function initializeEnvironment() {
   // Determine environment
 
   const env = process.env.NODE_ENV || 'development';
@@ -42,7 +44,9 @@ const app = express();
 //CORS middleware
 app.use(cors());
 app.use(express.json());
-app.use(jwtMiddleware);
+app.use(logMiddleware);
+
+app.use(authMiddleware);
 
 // Routes
 app.use('/snaps', snapRoutes);
