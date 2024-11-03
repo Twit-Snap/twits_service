@@ -296,3 +296,24 @@ export const deleteSnapById = async (
     next(error);
   }
 };
+
+export const editSnapById = async (
+  req: Request<{ id: string }, {}, CreateSnapBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    let edited_content: string | undefined = req.body.content;
+
+    edited_content = new TwitController().validateContent(edited_content);
+    await new SnapService().editSnapById(id, edited_content);
+
+    //const snapsToFeed = await new SnapService().loadSnapsToFeedAlgorithm();
+    //await new TwitController().loadSnapsToFeedAlgorithm(snapsToFeed);
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
