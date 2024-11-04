@@ -258,7 +258,8 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       hashtag: req.query.hashtag?.toString(),
       rank: req.query.rank?.toString(),
       exactDate: req.query.exactDate === 'true',
-      withEntities: req.query.withEntities === 'true'
+      withEntities: req.query.withEntities === 'true',
+      noJoinParent: req.query.noJoinParent === 'true',
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
@@ -323,7 +324,8 @@ export const getSnapById = async (
     const { id } = req.params;
 
     const params: GetByIdParams = {
-      withEntities: req.query.withEntities === 'true'
+      withEntities: req.query.withEntities === 'true',
+      noJoinParent: req.query.noJoinParent === 'true'
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

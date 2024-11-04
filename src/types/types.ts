@@ -27,6 +27,7 @@ export type SnapRankSample = {
 export type GetAllParams = {
   older: boolean;
   byFollowed: boolean;
+  noJoinParent?: boolean;
   followedIds?: number[];
   limit?: number;
   offset?: number;
@@ -41,6 +42,7 @@ export type GetAllParams = {
 
 export type GetByIdParams = {
   withEntities?: boolean;
+  noJoinParent?: boolean;
 };
 
 export type SnapResponse = {

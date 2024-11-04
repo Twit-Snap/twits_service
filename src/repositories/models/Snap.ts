@@ -20,9 +20,9 @@ export interface ISnapModel extends Document {
 const TwitSnapSchema: Schema = new Schema(
   {
     _id: { type: String, default: UUID.generate },
-    parent: { type: String, default: null },
+    parent: { type: String, ref: 'TwitSnap', default: null },
     type: { type: String, default: 'original' },
-    content: { type: String, required: true },
+    content: { type: String },
     user: {
       userId: { type: Number, required: true },
       name: { type: String, required: true },

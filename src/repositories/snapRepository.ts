@@ -39,7 +39,9 @@ export class SnapRepository implements ISnapRepository {
       id: savedSnap.id,
       user: savedSnap.user,
       content: savedSnap.content,
-      createdAt: savedSnap.createdAt
+      createdAt: savedSnap.createdAt,
+      parent: savedSnap.parent,
+      type: savedSnap.type
     };
   }
 
@@ -72,13 +74,26 @@ export class SnapRepository implements ISnapRepository {
     const snaps = await TwitSnap.find(filter)
       .sort({ createdAt: -1 })
       .skip(params.offset ? params.offset : 0)
-      .limit(params.limit ? params.limit : 20);
+      .limit(params.limit ? params.limit : 20)
+      .populate({
+        path: params?.noJoinParent ? '' : 'parent',
+        select: params?.noJoinParent ? '' : '_id user content createdAt type',
+        transform: doc => {
+          if (doc) {
+            const { _id, ...rest } = doc.toObject();
+            return { id: _id, ...rest };
+          }
+          return doc;
+        }
+      });
 
     return snaps.map(snap => ({
       id: snap._id,
       user: snap.user,
       content: snap.content,
-      createdAt: snap.createdAt
+      createdAt: snap.createdAt,
+      parent: snap.parent,
+      type: snap.type
     }));
   }
 
@@ -86,7 +101,18 @@ export class SnapRepository implements ISnapRepository {
     if (!UUID.isValid(id)) {
       throw new ValidationError('id', 'Invalid UUID');
     }
-    const snap = await TwitSnap.findById(id);
+    .populate({
+      path: params?.noJoinParent ? '' : 'parent',
+      select: params?.noJoinParent ? '' : '_id user content createdAt type',
+      transform: doc => {
+        if (doc) {
+          const { _id, ...rest } = doc.toObject();
+          return { id: _id, ...rest };
+        }
+        return doc;
+      }
+    })) as unknown as ISnapModel;
+
     if (!snap) {
       throw new NotFoundError('Snap', id);
     }
@@ -95,7 +121,9 @@ export class SnapRepository implements ISnapRepository {
       id: snap._id,
       user: snap.user,
       content: snap.content,
-      createdAt: snap.createdAt
+      createdAt: snap.createdAt,
+      parent: snap.parent,
+      type: snap.type
     };
 
     if (params?.withEntities) {
