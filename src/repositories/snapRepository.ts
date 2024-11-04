@@ -113,7 +113,7 @@ export class SnapRepository implements ISnapRepository {
       throw new NotFoundError('Snap', id);
     }
     await Like.deleteMany({ twitId: id }); // Cascade
-    await TwitSnap.deleteMany({ parent: id }); // Cascade
+    await TwitSnap.updateMany({ parent: id }, { $set: { parent: null } }); // Cascade
   }
 
   private filterSnapByDate(params: GetAllParams, filter: RootFilterQuery<ISnapModel>) {
