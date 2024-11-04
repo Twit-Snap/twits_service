@@ -38,11 +38,16 @@ export type GetAllParams = {
   rank?: string;
   exactDate?: boolean;
   withEntities?: boolean;
+  parent?: string;
+  type?: string;
+  excludeTwits?: string[];
 };
 
 export type GetByIdParams = {
   withEntities?: boolean;
   noJoinParent?: boolean;
+  userId?: number;
+  type?: string;
 };
 
 export type SnapResponse = {
@@ -53,6 +58,8 @@ export type SnapResponse = {
   likesCount?: number;
   userLiked?: boolean;
   entities?: Entities;
+  parent?: TwitSnap | string | null;
+  type?: string;
 };
 
 export type LikeResponse = {

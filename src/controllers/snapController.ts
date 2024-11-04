@@ -260,6 +260,9 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       exactDate: req.query.exactDate === 'true',
       withEntities: req.query.withEntities === 'true',
       noJoinParent: req.query.noJoinParent === 'true',
+      parent: req.query.parent?.toString(),
+      type: req.query.type?.toString(),
+      excludeTwits: []
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
@@ -289,6 +292,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
         rank_result.data.ranking.data
       );
       snaps.push(...rank_result.data.ranking.data);
+      params.excludeTwits = rank_result.data.ranking.data.map((twit: SnapResponse) => twit.id);
     }
 
     const twitController = new TwitController();

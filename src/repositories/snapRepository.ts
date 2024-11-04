@@ -46,9 +46,26 @@ export class SnapRepository implements ISnapRepository {
   }
 
   async findAll(params: GetAllParams): Promise<SnapResponse[]> {
-    var filter: RootFilterQuery<ISnapModel> = { content: { $regex: params.has, $options: 'miu' } };
+    var filter: RootFilterQuery<ISnapModel> = {
+      content: { $regex: params.has, $options: 'miu' },
+      id: { $nin: params.excludeTwits }
+    };
 
     filter = this.filterSnapByDate(params, filter);
+
+    if (params.type) {
+      filter = {
+        ...filter,
+        type: params.type
+      };
+    }
+
+    if (params.parent) {
+      filter = {
+        ...filter,
+        parent: params.parent
+      };
+    }
 
     if (params.username) {
       filter = {
@@ -101,6 +118,24 @@ export class SnapRepository implements ISnapRepository {
     if (!UUID.isValid(id)) {
       throw new ValidationError('id', 'Invalid UUID');
     }
+
+    var filter: RootFilterQuery<ISnapModel> = { _id: id };
+
+    if (params?.type) {
+      filter = {
+        parent: id,
+        type: params.type
+      };
+    }
+
+    if (params?.userId) {
+      filter = {
+        ...filter,
+        'user.userId': params.userId
+      };
+    }
+
+    const snap = (await TwitSnap.findOne(filter)
     .populate({
       path: params?.noJoinParent ? '' : 'parent',
       select: params?.noJoinParent ? '' : '_id user content createdAt type',
