@@ -39,7 +39,7 @@ export type GetAllParams = {
   exactDate?: boolean;
   withEntities?: boolean;
   parent?: string;
-  type?: string;
+  type?: string[];
   excludeTwits?: string[];
 };
 

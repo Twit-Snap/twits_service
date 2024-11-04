@@ -285,7 +285,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       withEntities: req.query.withEntities === 'true',
       noJoinParent: req.query.noJoinParent === 'true',
       parent: req.query.parent?.toString(),
-      type: req.query.type?.toString(),
+      type: req.query.type ? JSON.parse(req.query.type?.toString()) : undefined,
       excludeTwits: []
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

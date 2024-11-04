@@ -56,7 +56,7 @@ export class SnapRepository implements ISnapRepository {
     if (params.type) {
       filter = {
         ...filter,
-        type: params.type
+        type: { $in: params.type }
       };
     }
 
