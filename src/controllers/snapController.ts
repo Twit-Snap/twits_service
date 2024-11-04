@@ -375,13 +375,20 @@ export const getSnapById = async (
 };
 
 export const deleteSnapById = async (
-  req: Request<{ id: string }>,
+  req: Request<{ id: string }, { retwit: boolean }>,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { id } = req.params;
-    await new SnapService().deleteSnapById(id);
+    const retwit = req.query.retwit?.toString() === 'true';
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = (req as any).user;
+
+    retwit
+      ? await new SnapService().deleteRetwit(id, user.userId)
+      : await new SnapService().deleteSnapById(id);
 
     await new TwitController().loadSnapsToFeedAlgorithm();
 

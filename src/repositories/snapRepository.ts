@@ -114,29 +114,46 @@ export class SnapRepository implements ISnapRepository {
     }));
   }
 
+  async userRetwittedTwit(userId: number, twitId: string): Promise<boolean> {
+    if (!UUID.isValid(twitId)) {
+      throw new ValidationError('id', 'Invalid UUID');
+    }
+
+    var filter: RootFilterQuery<ISnapModel> = {
+      parent: twitId,
+      type: 'retwit',
+      'user.userId': userId
+    };
+
+    const snap = await TwitSnap.findOne(filter);
+
+    return snap ? true : false;
+  }
+
+  async deleteRetwit(parentId: string, userId: number) {
+    if (!UUID.isValid(parentId)) {
+      throw new ValidationError('id', 'Invalid UUID');
+    }
+
+    const result = await TwitSnap.deleteOne({
+      parent: parentId,
+      'user.userId': userId,
+      type: 'retwit'
+    });
+
+    console.log(result.deletedCount);
+
+    if (result.deletedCount === 0) {
+      throw new NotFoundError(`retwit of user ${userId} for parent`, parentId);
+    }
+  }
+
   async findById(id: string, params?: GetByIdParams): Promise<SnapResponse> {
     if (!UUID.isValid(id)) {
       throw new ValidationError('id', 'Invalid UUID');
     }
 
-    var filter: RootFilterQuery<ISnapModel> = { _id: id };
-
-    if (params?.type) {
-      filter = {
-        parent: id,
-        type: params.type
-      };
-    }
-
-    if (params?.userId) {
-      filter = {
-        ...filter,
-        'user.userId': params.userId
-      };
-    }
-
-    const snap = (await TwitSnap.findOne(filter)
-    .populate({
+    const snap = (await TwitSnap.findById(id).populate({
       path: params?.noJoinParent ? '' : 'parent',
       select: params?.noJoinParent ? '' : '_id user content createdAt type',
       transform: doc => {
@@ -176,7 +193,8 @@ export class SnapRepository implements ISnapRepository {
       throw new NotFoundError('Snap', id);
     }
     await Like.deleteMany({ twitId: id }); // Cascade
-    await TwitSnap.updateMany({ parent: id }, { $set: { parent: null } }); // Cascade
+    await TwitSnap.deleteMany({ parent: id, type: 'retwit' }); // Cascade
+    await TwitSnap.updateMany({ parent: id }, { $set: { parent: null } });
   }
 
   private filterSnapByDate(params: GetAllParams, filter: RootFilterQuery<ISnapModel>) {

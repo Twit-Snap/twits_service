@@ -46,8 +46,6 @@ export type GetAllParams = {
 export type GetByIdParams = {
   withEntities?: boolean;
   noJoinParent?: boolean;
-  userId?: number;
-  type?: string;
 };
 
 export type SnapResponse = {
