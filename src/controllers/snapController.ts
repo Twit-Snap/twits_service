@@ -121,7 +121,13 @@ export class TwitController implements ITwitController {
   }
 
   async addFollowState(user: JwtUserPayload, snaps: SnapResponse[]): Promise<SnapResponse[]> {
-    const users = new Set(snaps.map(twit => twit.user.username));
+    const users = new Set(
+      snaps.map(twit =>
+        twit.type === 'retwit'
+          ? (twit.parent as unknown as SnapResponse).user.username
+          : twit.user.username
+      )
+    );
 
     const userDetails = await Promise.all(
       [...users].map(async username => {
@@ -155,18 +161,37 @@ export class TwitController implements ITwitController {
       }
     });
 
-    const ret = snaps.map(twit => ({
-      ...twit,
-      user: {
-        ...(userMap.get(twit.user.username) || twit.user),
-        userId: twit.user.userId,
-        id: undefined,
-        followersCount: undefined,
-        followingCount: undefined,
-        birthdate: undefined,
-        createdAt: undefined
-      }
-    }));
+    const ret = snaps.map(twit => {
+      const realTwit = twit.type === 'retwit' ? (twit.parent as unknown as SnapResponse) : twit;
+      return twit.type === 'retwit'
+        ? ({
+            ...twit,
+            parent: {
+              ...realTwit,
+              user: {
+                ...(userMap.get(realTwit.user.username) || realTwit.user),
+                userId: realTwit.user.userId,
+                id: undefined,
+                followersCount: undefined,
+                followingCount: undefined,
+                birthdate: undefined,
+                createdAt: undefined
+              }
+            }
+          } as unknown as SnapResponse)
+        : {
+            ...realTwit,
+            user: {
+              ...(userMap.get(realTwit.user.username) || realTwit.user),
+              userId: realTwit.user.userId,
+              id: undefined,
+              followersCount: undefined,
+              followingCount: undefined,
+              birthdate: undefined,
+              createdAt: undefined
+            }
+          };
+    });
 
     return ret;
   }
