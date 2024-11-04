@@ -1,4 +1,5 @@
 import { SnapRepository } from '../repositories/snapRepository';
+import { EntityAlreadyExistsError, NotFoundError } from '../types/customErrors';
 import { ISnapService } from '../types/servicesTypes';
 import {
   Entities,
@@ -32,7 +33,25 @@ export class SnapService implements ISnapService {
       hashtags: this.extractHashTags(snapBody.content)
     };
 
-    const savedSnap: SnapResponse = await new SnapRepository().create({ ...snapBody, entities });
+    const repository = new SnapRepository();
+
+    if (snapBody.type === 'retwit') {
+      await repository
+        .findById(snapBody.parent, { type: 'retwit', userId: snapBody.user.userId })
+        .then(() => {
+          throw new EntityAlreadyExistsError(
+            'twit',
+            `You already retwitted ${snapBody.parent} already exist`
+          );
+        })
+        .catch(error => {
+          if (!(error instanceof NotFoundError)) {
+            throw error;
+          }
+        });
+    }
+
+    const savedSnap: SnapResponse = await repository.create({ ...snapBody, entities });
     return savedSnap;
   }
 
