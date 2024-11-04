@@ -55,6 +55,9 @@ export type SnapResponse = {
   createdAt: string;
   likesCount?: number;
   userLiked?: boolean;
+  userRetwitted?: boolean;
+  retwitCount?: number;
+  commentCount?: number;
   entities?: Entities;
   parent?: TwitSnap | string | null;
   type?: string;
@@ -80,6 +83,7 @@ export interface TwitSnap {
   user: TwitUser;
   content: string;
   entities: Entities;
+  parent: string | TwitSnap;
   //inReplyToTweetId: string | null;
   //inReplyToUserId: string | null;
   //lang: string;

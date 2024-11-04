@@ -114,6 +114,32 @@ export class SnapRepository implements ISnapRepository {
     }));
   }
 
+  async getCommentsPerTwit(twitsIds: string[]): Promise<Map<string, number>> {
+    const parentIdCounts = new Map<string, number>();
+
+    await TwitSnap.find({ parent: { $in: twitsIds }, type: 'comment' }).then(documents => {
+      documents.forEach(doc => {
+        const parentId = doc.parent;
+        parentIdCounts.set(parentId, (parentIdCounts.get(parentId) || 0) + 1);
+      });
+    });
+
+    return parentIdCounts;
+  }
+
+  async getRetwitsPerTwit(twitsIds: string[]): Promise<Map<string, number>> {
+    const parentIdCounts = new Map<string, number>();
+
+    await TwitSnap.find({ parent: { $in: twitsIds }, type: 'retwit' }).then(documents => {
+      documents.forEach(doc => {
+        const parentId = doc.parent;
+        parentIdCounts.set(parentId, (parentIdCounts.get(parentId) || 0) + 1);
+      });
+    });
+
+    return parentIdCounts;
+  }
+
   async userRetwittedTwit(userId: number, twitId: string): Promise<boolean> {
     if (!UUID.isValid(twitId)) {
       throw new ValidationError('id', 'Invalid UUID');

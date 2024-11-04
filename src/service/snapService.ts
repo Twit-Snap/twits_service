@@ -11,6 +11,7 @@ import {
   SnapRankSample,
   SnapResponse
 } from '../types/types';
+import { LikeService } from './likeService';
 
 export class SnapService implements ISnapService {
   private extractHashTags(content: string): Hashtag[] {
@@ -50,6 +51,60 @@ export class SnapService implements ISnapService {
 
     const savedSnap: SnapResponse = await repository.create({ ...snapBody, entities });
     return savedSnap;
+  }
+
+  async addInteractions(userId: number, snaps: SnapResponse[]): Promise<SnapResponse[]> {
+    snaps = await new LikeService().addLikeInteractions(userId, snaps);
+    snaps = await this.addCommentInteractions(snaps);
+    snaps = await this.addRetwitInteractions(userId, snaps);
+    return snaps;
+  }
+
+  async addCommentInteractions(snaps: SnapResponse[]) {
+    const retwitsPerTwit = await new SnapRepository().getCommentsPerTwit(
+      snaps.map(twit =>
+        twit.type === 'retwit' ? (twit.parent as unknown as SnapResponse).id : twit.id
+      )
+    );
+
+    return await Promise.all(
+      snaps.map(async twit => {
+        const twitId =
+          twit.type === 'retwit' ? (twit.parent as unknown as SnapResponse).id : twit.id;
+        return {
+          ...twit,
+          commentCount: retwitsPerTwit.get(twitId) || 0
+        };
+      })
+    );
+  }
+
+  async addRetwitInteractions(userId: number, snaps: SnapResponse[]) {
+    const retwitsPerTwit = await new SnapRepository().getRetwitsPerTwit(
+      snaps.map(twit =>
+        twit.type === 'retwit' ? (twit.parent as unknown as SnapResponse).id : twit.id
+      )
+    );
+
+    return await Promise.all(
+      snaps
+        .filter(twit =>
+          twit.type === 'retwit' ? userId === twit.user.userId || twit.user.following : true
+        )
+        .map(async twit => {
+          const twitId =
+            twit.type === 'retwit' ? (twit.parent as unknown as SnapResponse).id : twit.id;
+          return {
+            ...twit,
+            userRetwitted: await new SnapRepository().userRetwittedTwit(userId, twitId),
+            retwitCount: retwitsPerTwit.get(twitId) || 0
+          };
+        })
+    );
+  }
+
+  async deleteRetwit(parentId: string, userId: number) {
+    await new SnapRepository().deleteRetwit(parentId, userId);
   }
 
   async getAllSnaps(params: GetAllParams) {

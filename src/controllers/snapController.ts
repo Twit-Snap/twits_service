@@ -336,7 +336,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
 
     //Add following / followed states
     snaps = user.type === 'user' ? await twitController.addFollowState(user, snaps) : snaps;
-    const resultInteractions = await new LikeService().addLikeInteractions(user.userId, snaps);
+    const resultInteractions = await new SnapService().addInteractions(user.userId, snaps);
 
     res.status(200).json({ data: resultInteractions });
   } catch (error) {
