@@ -17,6 +17,7 @@ import {
   RankRequest,
   SnapBody,
   SnapResponse,
+  TwitSnap,
   TwitUser,
   User
 } from '../types/types';
@@ -122,18 +123,24 @@ export class TwitController implements ITwitController {
 
   async addFollowState(user: JwtUserPayload, snaps: SnapResponse[]): Promise<SnapResponse[]> {
     const users = new Set(
-      snaps.map(twit =>
-        twit.type === 'retwit'
-          ? (twit.parent as unknown as SnapResponse).user.username
-          : twit.user.username
-      )
+      snaps
+        .map(twit => {
+          const ret = [twit.user.username];
+          if (twit.parent) {
+            ret.push((twit.parent as unknown as SnapResponse).user.username);
+          }
+
+          return ret;
+        })
+        .reduce((acc, current) => [...acc, ...current], [])
     );
 
     const userDetails = await Promise.all(
       [...users].map(async username => {
         return await axios
           .get(`${process.env.USERS_SERVICE_URL}/users/${username}`, {
-            headers: { Authorization: `Bearer ${new JWTService().sign(user)}` }
+            headers: { Authorization: `Bearer ${new JWTService().sign(user)}` },
+            params: { reduce: true }
           })
           .then(response => {
             return response.data.data;
@@ -162,37 +169,29 @@ export class TwitController implements ITwitController {
     });
 
     const ret = snaps.map(twit => {
-      const realTwit = twit.type === 'retwit' ? (twit.parent as unknown as SnapResponse) : twit;
-      return twit.type === 'retwit'
-        ? ({
-            ...twit,
-            parent: {
-              ...realTwit,
-              user: {
-                ...(userMap.get(realTwit.user.username) || realTwit.user),
-                userId: realTwit.user.userId,
-                id: undefined,
-                followersCount: undefined,
-                followingCount: undefined,
-                birthdate: undefined,
-                createdAt: undefined
-              }
-            }
-          } as unknown as SnapResponse)
-        : {
-            ...realTwit,
-            user: {
-              ...(userMap.get(realTwit.user.username) || realTwit.user),
-              userId: realTwit.user.userId,
-              id: undefined,
-              followersCount: undefined,
-              followingCount: undefined,
-              birthdate: undefined,
-              createdAt: undefined
-            }
-          };
-    });
+      let r = {
+        ...twit,
+        user: {
+          ...(userMap.get(twit.user.username) || twit.user)
+        }
+      };
 
+      if (twit.parent) {
+        const parent = twit.parent as unknown as SnapResponse;
+        r = {
+          ...r,
+          parent: {
+            ...parent,
+            user: {
+              ...(userMap.get(parent.user.username) || parent.user)
+            }
+          } as unknown as TwitSnap
+        };
+      }
+
+      return r;
+    });
+    console.log(ret);
     return ret;
   }
 
