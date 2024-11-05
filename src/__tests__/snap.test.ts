@@ -2097,6 +2097,134 @@ describe('Snap API Tests', () => {
         'Test snap 2'
       ]);
     });
+
+    it('should return all twits if no parent is specified', async () => {
+      const parent = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: user.username
+        },
+        content: 'Test snap 1',
+        type: 'original'
+      });
+
+      const parent2 = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 2',
+          username: user.username
+        },
+        content: 'Test snap 2',
+        type: 'comment',
+        parent: parent.id
+      });
+
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: user.username
+        },
+        content: 'Test snap 3',
+        type: 'comment',
+        parent: parent2.id
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({
+              data: {
+                name: user.name,
+                userId: user.userId,
+                username: user.username,
+                isPrivate: true,
+                following: false,
+                followed: false
+              }
+            });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get('/snaps/')
+        .query({ parent: undefined })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(3);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'Test snap 3',
+        'Test snap 2',
+        'Test snap 1'
+      ]);
+    });
+
+    it('should return only the twits that parent is equal to parent param', async () => {
+      const parent = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: user.username
+        },
+        content: 'Test snap 1',
+        type: 'original'
+      });
+
+      const parent2 = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 2',
+          username: user.username
+        },
+        content: 'Test snap 2',
+        type: 'comment',
+        parent: parent.id
+      });
+
+      await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: user.username
+        },
+        content: 'Test snap 3',
+        type: 'comment',
+        parent: parent2.id
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({
+              data: {
+                name: user.name,
+                userId: user.userId,
+                username: user.username,
+                isPrivate: true,
+                following: false,
+                followed: false
+              }
+            });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get('/snaps/')
+        .query({ parent: parent.id })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual(['Test snap 2']);
+    });
   });
 
   describe('GET /snaps/:id', () => {
