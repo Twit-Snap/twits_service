@@ -2035,6 +2035,68 @@ describe('Snap API Tests', () => {
       ]);
     });
 
+    it('should return a list of twits ranked by user preferences', async () => {
+      const twit1 = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: user.username
+        },
+        content: 'Test snap 1',
+        type: 'original'
+      });
+
+      const twit2 = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 2',
+          username: user.username
+        },
+        content: 'Test snap 2',
+        type: 'original'
+      });
+
+      server.resetHandlers(
+        ...[
+          http.post(`${process.env.FEED_ALGORITHM_URL}/rank`, () => {
+            return HttpResponse.json({
+              ranking: {
+                data: [
+                  { id: twit1.id, content: twit1.content },
+                  { id: twit2.id, content: twit2.content }
+                ]
+              }
+            });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({
+              data: {
+                name: user.name,
+                userId: user.userId,
+                username: user.username,
+                isPrivate: true,
+                following: false,
+                followed: false
+              }
+            });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get('/snaps/')
+        .query({ rank: true })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(2);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'Test snap 1',
+        'Test snap 2'
+      ]);
+    });
   });
 
   describe('GET /snaps/:id', () => {
