@@ -4,6 +4,7 @@ import { setupServer } from 'msw/node';
 import request from 'supertest';
 import app from '../app';
 import TwitSnap from '../repositories/models/Snap';
+import { SnapRepository } from '../repositories/snapRepository';
 import { JWTService } from '../service/jwtService';
 import { SnapResponse } from '../types/types';
 import { UUID } from '../utils/uuid';
@@ -2854,7 +2855,148 @@ describe('Snap API Tests', () => {
         type: 'about:blank'
       });
     });
+
+    it('should remove a retwit if retwit is true', async () => {
+      const createdSnap = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User',
+          username: 'testuser'
+        },
+        content: 'Test twit to delete',
+        entities: {
+          hashtags: []
+        }
+      });
+
+      await TwitSnap.create({
+        user: user,
+        content: '',
+        entities: {
+          hashtags: []
+        },
+        type: 'retwit',
+        parent: createdSnap.id
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.FEED_ALGORITHM_URL}/`, () => {
+            return HttpResponse.json({}, { status: 200 });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .delete(`/snaps/${createdSnap.id}`)
+        .query({ retwit: true })
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+      expect(response.status).toBe(204);
+
+      const deletedSnap = await new SnapRepository().userRetwittedTwit(user.userId, createdSnap.id);
+      expect(deletedSnap).toBeFalsy();
+    });
+
+    it('should raise a ValidationError if want to delete a retwit with an incorrect parent id', async () => {
+      const createdSnap = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User',
+          username: 'testuser'
+        },
+        content: 'Test twit to delete',
+        entities: {
+          hashtags: []
+        }
+      });
+
+      await TwitSnap.create({
+        user: user,
+        content: '',
+        entities: {
+          hashtags: []
+        },
+        type: 'retwit',
+        parent: createdSnap.id
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.FEED_ALGORITHM_URL}/`, () => {
+            return HttpResponse.json({}, { status: 200 });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .delete(`/snaps/invalid-id-format`)
+        .query({ retwit: true })
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        'custom-field': 'id',
+        detail: 'Invalid UUID',
+        instance: '/snaps/invalid-id-format?retwit=true',
+        status: 400,
+        title: 'Validation Error',
+        type: 'about:blank'
+      });
+    });
+
+    it('should raise a NotFoundError if want to delete a retwit with a parent id that does not exist', async () => {
+      const createdSnap = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User',
+          username: 'testuser'
+        },
+        content: 'Test twit to delete',
+        entities: {
+          hashtags: []
+        }
+      });
+
+      const retwit = await TwitSnap.create({
+        user: user,
+        content: '',
+        entities: {
+          hashtags: []
+        },
+        type: 'retwit',
+        parent: createdSnap.id
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.FEED_ALGORITHM_URL}/`, () => {
+            return HttpResponse.json({}, { status: 200 });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .delete(`/snaps/${retwit.id}`)
+        .query({ retwit: true })
+        .set({
+          Authorization: `Bearer ${auth}`
+        });
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        detail: `The retwit of user 1 for parent with ID ${retwit.id} was not found.`,
+        instance: `/snaps/${retwit.id}?retwit=true`,
+        status: 404,
+        title: 'retwit of user 1 for parent Not Found',
+        type: 'about:blank'
+      });
+    });
   });
+
   describe('getTotalAmount', () => {
     it('should return 0 if there are no snaps', async () => {
       const response = await request(app)
