@@ -180,7 +180,7 @@ describe('Snap API Tests', () => {
         type: 'original'
       });
 
-      const retwit = await TwitSnap.create({
+      await TwitSnap.create({
         user: {
           userId: 1,
           name: 'Test User 1',
@@ -225,7 +225,7 @@ describe('Snap API Tests', () => {
         type: 'original'
       });
 
-      const retwit = await TwitSnap.create({
+      await TwitSnap.create({
         user: {
           userId: 1,
           name: 'Test User 1',

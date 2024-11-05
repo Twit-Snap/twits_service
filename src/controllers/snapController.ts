@@ -380,9 +380,11 @@ export const deleteSnapById = async (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
 
-    retwit
-      ? await new SnapService().deleteRetwit(id, user.userId)
-      : await new SnapService().deleteSnapById(id);
+    if (retwit) {
+      await new SnapService().deleteRetwit(id, user.userId);
+    } else {
+      await new SnapService().deleteSnapById(id);
+    }
 
     await new TwitController().loadSnapsToFeedAlgorithm();
 

@@ -129,7 +129,7 @@ describe('Snap API Tests', () => {
     });
 
     it('should raise a validationError if want to edit a twit using an invalid id', async () => {
-      const twit = await TwitSnap.create({
+      await TwitSnap.create({
         user: {
           userId: 1,
           name: 'Test User 1',

@@ -167,8 +167,6 @@ export class SnapRepository implements ISnapRepository {
       type: 'retwit'
     });
 
-    console.log(result.deletedCount);
-
     if (result.deletedCount === 0) {
       throw new NotFoundError(`retwit of user ${userId} for parent`, parentId);
     }
