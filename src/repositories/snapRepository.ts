@@ -30,8 +30,8 @@ export class SnapRepository implements ISnapRepository {
       content: snapBody.content,
       user: snapBody.user,
       entities: snapBody.entities,
-      parent: snapBody.parent,
-      type: snapBody.type,
+      parent: snapBody.parent || null,
+      type: snapBody.type || 'original',
       createdAt: new Date().toISOString()
     });
     const savedSnap = await snap.save();

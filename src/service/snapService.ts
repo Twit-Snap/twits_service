@@ -19,16 +19,16 @@ export class SnapService implements ISnapService {
     return hashTags ? hashTags.map(tag => ({ text: tag })) : [];
   }
 
-  private validateParent(parent: string | undefined) {
+  private async validateParent(parent: string | undefined) {
     if (!parent) {
       return;
     }
 
-    this.getSnapById(parent); // repository validation
+    await this.getSnapById(parent); // repository validation
   }
 
   async createSnap(snapBody: SnapBody): Promise<SnapResponse> {
-    this.validateParent(snapBody.parent);
+    await this.validateParent(snapBody.parent);
 
     const entities: Entities = {
       hashtags: this.extractHashTags(snapBody.content)
