@@ -404,8 +404,7 @@ export const editSnapById = async (
     edited_content = new TwitController().validateContent(edited_content);
     await new SnapService().editSnapById(id, edited_content);
 
-    //const snapsToFeed = await new SnapService().loadSnapsToFeedAlgorithm();
-    //await new TwitController().loadSnapsToFeedAlgorithm(snapsToFeed);
+    await new TwitController().loadSnapsToFeedAlgorithm();
 
     res.status(204).send();
   } catch (error) {
