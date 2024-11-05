@@ -16,7 +16,7 @@ import TwitSnap, { ISnapModel } from './models/Snap';
 
 export interface ISnapRepository {
   findAll(params: GetAllParams): Promise<SnapResponse[]>;
-  create(message: string, user: TwitUser, entities: Entities): Promise<SnapResponse>;
+  create(message: string, user: TwitUser, entities: Entities, privacy: string): Promise<SnapResponse>;
   findById(id: string, params?: GetByIdParams): Promise<SnapResponse>;
   deleteById(id: string): Promise<void>;
   totalAmount(params: GetAllParams): Promise<number>;
@@ -24,11 +24,12 @@ export interface ISnapRepository {
 }
 
 export class SnapRepository implements ISnapRepository {
-  async create(content: string, user: TwitUser, entities: Entities): Promise<SnapResponse> {
+  async create(content: string, user: TwitUser, entities: Entities, privacy: string): Promise<SnapResponse> {
     const snap = new TwitSnap({
       _id: UUID.generate(),
       content,
       user,
+      privacy,
       entities,
       createdAt: new Date().toISOString()
     });
@@ -37,7 +38,8 @@ export class SnapRepository implements ISnapRepository {
       id: savedSnap.id,
       user: savedSnap.user,
       content: savedSnap.content,
-      createdAt: savedSnap.createdAt
+      createdAt: savedSnap.createdAt,
+      privacy: savedSnap.privacy
     };
   }
 
@@ -76,7 +78,8 @@ export class SnapRepository implements ISnapRepository {
       id: snap._id,
       user: snap.user,
       content: snap.content,
-      createdAt: snap.createdAt
+      createdAt: snap.createdAt,
+      privacy: snap.privacy
     }));
   }
 
@@ -93,7 +96,8 @@ export class SnapRepository implements ISnapRepository {
       id: snap._id,
       user: snap.user,
       content: snap.content,
-      createdAt: snap.createdAt
+      createdAt: snap.createdAt,
+      privacy: snap.privacy
     };
 
     if (params?.withEntities) {
@@ -225,7 +229,8 @@ export class SnapRepository implements ISnapRepository {
       id: snap._id,
       user: snap.user,
       content: snap.content,
-      createdAt: snap.createdAt
+      createdAt: snap.createdAt,
+      privacy: snap.privacy
     };
   }
 }

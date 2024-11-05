@@ -173,7 +173,9 @@ export const createSnap = async (
       username: req.body.authorUsername
     };
 
-    const savedSnap: SnapResponse = await new SnapService().createSnap(content, user);
+    const privacySettings: string = req.body.privacy;
+
+    const savedSnap: SnapResponse = await new SnapService().createSnap(content, user, privacySettings);
     res.status(201).json({ data: savedSnap });
   } catch (error) {
     next(error);

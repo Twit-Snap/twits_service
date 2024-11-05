@@ -17,11 +17,11 @@ export class SnapService implements ISnapService {
     return hashTags ? hashTags.map(tag => ({ text: tag })) : [];
   }
 
-  async createSnap(content: string, user: TwitUser): Promise<SnapResponse> {
+  async createSnap(content: string, user: TwitUser, privacySettings : string): Promise<SnapResponse> {
     const entities: Entities = {
       hashtags: this.extractHashTags(content)
     };
-    const savedSnap: SnapResponse = await new SnapRepository().create(content, user, entities);
+    const savedSnap: SnapResponse = await new SnapRepository().create(content, user, entities, privacySettings);
     return savedSnap;
   }
 

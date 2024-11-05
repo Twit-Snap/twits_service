@@ -49,6 +49,7 @@ export type SnapResponse = {
   user: TwitUser;
   content: string;
   createdAt: string;
+  privacy: string;
   likesCount?: number;
   userLiked?: boolean;
   entities?: Entities;
@@ -65,6 +66,7 @@ export type CreateSnapBody = {
   authorId: number;
   authorName: string;
   authorUsername: string;
+  privacy: string;
 };
 
 export interface TwitSnap {
