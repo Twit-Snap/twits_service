@@ -213,5 +213,50 @@ describe('Snap API Tests', () => {
         'custom-field': 'twit'
       });
     });
+
+    it('should raise a ValidationError if want to create a retwit with an invalid parent', async () => {
+      const parent = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1',
+        type: 'original'
+      });
+
+      const retwit = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: 'testuser1'
+        },
+        content: 'Test snap 1',
+        parent: parent.id,
+        type: 'retwit'
+      });
+
+      const response = await request(app)
+        .post('/snaps')
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .send({
+          user: user,
+          content: '',
+          type: 'retwit',
+          parent: 'invalid-parent-id'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        detail: `Invalid UUID`,
+        instance: '/snaps',
+        status: 400,
+        title: 'Validation Error',
+        type: 'about:blank',
+        'custom-field': 'id'
+      });
+    });
   });
 });
