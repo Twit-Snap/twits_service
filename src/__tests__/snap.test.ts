@@ -1735,7 +1735,308 @@ describe('Snap API Tests', () => {
         type: 'about:blank'
       });
     });
+
+    it('should return all comments if the only item in type param is comment', async () => {
+      const first = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: user.username
+        },
+        content: 'Test snap 1',
+        type: 'original'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: user.username
+        },
+        content: '',
+        type: 'retwit',
+        parent: first.id
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: user.username
+        },
+        content: 'Test snap 3',
+        type: 'comment',
+        parent: first.id
+      });
+
+      server.resetHandlers(
+        ...[
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({
+              data: {
+                name: user.name,
+                userId: user.userId,
+                username: user.username,
+                isPrivate: true,
+                following: false,
+                followed: false
+              }
+            });
+          })
+        ]
+      );
+
+      const response = await request(app)
+        .get('/snaps/')
+        .query({ type: '["comment"]' })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual(['Test snap 3']);
+      expect(response.body.data.map((snap: SnapResponse) => snap.type)).toEqual(['comment']);
+    });
+
+    it('should return all retwits if the only item in type param is retwit', async () => {
+      const first = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: user.username
+        },
+        content: 'Test snap 1',
+        type: 'original'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: user.username
+        },
+        content: '',
+        type: 'retwit',
+        parent: first.id
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: user.username
+        },
+        content: 'Test snap 3',
+        type: 'comment',
+        parent: first.id
+      });
+
+      const response = await request(app)
+        .get('/snaps/')
+        .query({ type: '["retwit"]' })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual(['']);
+      expect(response.body.data.map((snap: SnapResponse) => snap.type)).toEqual(['retwit']);
+    });
+
+    it('should return all original if the only item in type param is original', async () => {
+      const first = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: user.username
+        },
+        content: 'Test snap 1',
+        type: 'original'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: user.username
+        },
+        content: '',
+        type: 'retwit',
+        parent: first.id
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: user.username
+        },
+        content: 'Test snap 3',
+        type: 'comment',
+        parent: first.id
+      });
+
+      const response = await request(app)
+        .get('/snaps/')
+        .query({ type: '["original"]' })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual(['Test snap 1']);
+      expect(response.body.data.map((snap: SnapResponse) => snap.type)).toEqual(['original']);
+    });
+
+    it('should return all comment and retwits if type param is comment and retwit', async () => {
+      const first = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: user.username
+        },
+        content: 'Test snap 1',
+        type: 'original'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: user.username
+        },
+        content: '',
+        type: 'retwit',
+        parent: first.id
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: user.username
+        },
+        content: 'Test snap 3',
+        type: 'comment',
+        parent: first.id
+      });
+
+      const response = await request(app)
+        .get('/snaps/')
+        .query({ type: '["comment","retwit"]' })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(2);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'Test snap 3',
+        ''
+      ]);
+      expect(response.body.data.map((snap: SnapResponse) => snap.type)).toEqual([
+        'comment',
+        'retwit'
+      ]);
+    });
+
+    it('should return all original and comment if type param is original and comment', async () => {
+      const first = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: user.username
+        },
+        content: 'Test snap 1',
+        type: 'original'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: user.username
+        },
+        content: '',
+        type: 'retwit',
+        parent: first.id
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: user.username
+        },
+        content: 'Test snap 3',
+        type: 'comment',
+        parent: first.id
+      });
+
+      const response = await request(app)
+        .get('/snaps/')
+        .query({ type: '["comment","original"]' })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(2);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        'Test snap 3',
+        'Test snap 1'
+      ]);
+      expect(response.body.data.map((snap: SnapResponse) => snap.type)).toEqual([
+        'comment',
+        'original'
+      ]);
+    });
+
+    it('should return all original and retwits if type param is original and retwit', async () => {
+      const first = await TwitSnap.create({
+        user: {
+          userId: 1,
+          name: 'Test User 1',
+          username: user.username
+        },
+        content: 'Test snap 1',
+        type: 'original'
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 2,
+          name: 'Test User 2',
+          username: user.username
+        },
+        content: '',
+        type: 'retwit',
+        parent: first.id
+      });
+      await TwitSnap.create({
+        user: {
+          userId: 3,
+          name: 'Test User 3',
+          username: user.username
+        },
+        content: 'Test snap 3',
+        type: 'comment',
+        parent: first.id
+      });
+
+      const response = await request(app)
+        .get('/snaps/')
+        .query({ type: '["original","retwit"]' })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(2);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
+        '',
+        'Test snap 1'
+      ]);
+      expect(response.body.data.map((snap: SnapResponse) => snap.type)).toEqual([
+        'retwit',
+        'original'
+      ]);
+    });
+
   });
+
   describe('GET /snaps/:id', () => {
     it('should raise AuthenticationError if no Authorization is specified', async () => {
       const createdSnap = await TwitSnap.create({
