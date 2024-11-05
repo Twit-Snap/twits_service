@@ -1579,7 +1579,7 @@ describe('Snap API Tests', () => {
             return HttpResponse.json({
               data: {
                 name: user.name,
-                id: user.userId,
+                userId: user.userId,
                 username: user.username,
                 isPrivate: true,
                 following: false,
@@ -1995,7 +1995,7 @@ describe('Snap API Tests', () => {
             return HttpResponse.json({
               data: {
                 name: user.name,
-                id: user.userId,
+                userId: user.userId,
                 username: user.username,
                 isPrivate: true,
                 following: false,

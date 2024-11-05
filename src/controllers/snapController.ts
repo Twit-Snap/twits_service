@@ -197,12 +197,7 @@ export class TwitController implements ITwitController {
 
   async loadSnapsToFeedAlgorithm() {
     const snapsToFeed = await new SnapService().loadSnapsToFeedAlgorithm();
-    if (snapsToFeed.data.length === 0) {
-      console.log('No snaps to feed algorithm');
-      return;
-    }
 
-    console.log(snapsToFeed);
     await axios.post(`${process.env.FEED_ALGORITHM_URL}/`, snapsToFeed).catch(error => {
       console.error(error.data);
       switch (error.status) {
