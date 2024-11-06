@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { NextFunction, Request, Response } from 'express';
 import { JWTService } from '../service/jwtService';
-import { LikeService } from '../service/likeService';
 import { SnapService } from '../service/snapService';
 import { ITwitController } from '../types/controllerTypes';
 import {
@@ -358,9 +357,7 @@ export const getSnapById = async (
     snap =
       user.type === 'user' ? (await new TwitController().addFollowState(user, [snap]))[0] : snap;
 
-    const resultInteractions = (
-      await new LikeService().addLikeInteractions(user.userId, [snap])
-    )[0];
+    const resultInteractions = (await new SnapService().addInteractions(user.userId, [snap]))[0];
 
     res.status(200).json({ data: resultInteractions });
   } catch (error) {
