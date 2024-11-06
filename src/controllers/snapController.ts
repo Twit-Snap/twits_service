@@ -410,3 +410,19 @@ export const editSnapById = async (
     next(error);
   }
 };
+
+export const getTrendingTopics = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const trendingTopics = await axios.post(`${process.env.FEED_ALGORITHM_URL}/trending`,
+      {limit : 5}
+    );
+    console.log('Fetched trending topics: ', trendingTopics.data.trends.data );
+    res.status(200).json({ data: trendingTopics.data.trends.data });
+  } catch (error) {
+    next(error);
+  }
+};
