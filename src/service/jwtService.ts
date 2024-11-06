@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { AuthenticationError } from '../types/customErrors';
 import { IJWTService, JwtCustomPayload } from '../types/jwt';

@@ -2,6 +2,7 @@ import express from 'express';
 import {
   createSnap,
   deleteSnapById,
+  editSnapById,
   getAllSnaps,
   getSnapById,
   getTotalAmount,
@@ -16,5 +17,6 @@ router.get('/trending', getTrendingTopics);
 router.get('/', getAllSnaps);
 router.get('/:id', getSnapById);
 router.delete('/:id', deleteSnapById);
+router.patch('/:id', editSnapById);
 
 export default router;

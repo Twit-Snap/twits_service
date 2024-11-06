@@ -3,31 +3,35 @@ import { NotFoundError, ValidationError } from '../types/customErrors';
 import {
   Entities,
   GetAllParams,
+  GetByIdParams,
   RankRequest,
+  SnapBody,
   SnapRankSample,
-  SnapResponse,
-  TwitUser
+  SnapResponse
 } from '../types/types';
 import { UUID } from '../utils/uuid';
 import { LikeRepository } from './likeRepository';
+import Like from './models/Like';
 import TwitSnap, { ISnapModel } from './models/Snap';
 
 export interface ISnapRepository {
   findAll(params: GetAllParams): Promise<SnapResponse[]>;
-  create(message: string, user: TwitUser, entities: Entities): Promise<SnapResponse>;
-  findById(id: string): Promise<SnapResponse>;
+  create(snapBody: SnapBody): Promise<SnapResponse>;
+  findById(id: string, params?: GetByIdParams): Promise<SnapResponse>;
   deleteById(id: string): Promise<void>;
   totalAmount(params: GetAllParams): Promise<number>;
   loadSnapsToFeedAlgorithm(): Promise<RankRequest>;
 }
 
 export class SnapRepository implements ISnapRepository {
-  async create(content: string, user: TwitUser, entities: Entities): Promise<SnapResponse> {
+  async create(snapBody: SnapBody): Promise<SnapResponse> {
     const snap = new TwitSnap({
       _id: UUID.generate(),
-      content,
-      user,
-      entities,
+      content: snapBody.content,
+      user: snapBody.user,
+      entities: snapBody.entities,
+      parent: snapBody.parent || null,
+      type: snapBody.type || 'original',
       createdAt: new Date().toISOString()
     });
     const savedSnap = await snap.save();
@@ -35,14 +39,33 @@ export class SnapRepository implements ISnapRepository {
       id: savedSnap.id,
       user: savedSnap.user,
       content: savedSnap.content,
-      createdAt: savedSnap.createdAt
+      createdAt: savedSnap.createdAt,
+      parent: savedSnap.parent,
+      type: savedSnap.type
     };
   }
 
   async findAll(params: GetAllParams): Promise<SnapResponse[]> {
-    var filter: RootFilterQuery<ISnapModel> = { content: { $regex: params.has, $options: 'miu' } };
+    var filter: RootFilterQuery<ISnapModel> = {
+      content: { $regex: params.has, $options: 'miu' },
+      id: { $nin: params.excludeTwits }
+    };
 
     filter = this.filterSnapByDate(params, filter);
+
+    if (params.type) {
+      filter = {
+        ...filter,
+        type: { $in: params.type }
+      };
+    }
+
+    if (params.parent) {
+      filter = {
+        ...filter,
+        parent: params.parent
+      };
+    }
 
     if (params.username) {
       filter = {
@@ -68,30 +91,121 @@ export class SnapRepository implements ISnapRepository {
     const snaps = await TwitSnap.find(filter)
       .sort({ createdAt: -1 })
       .skip(params.offset ? params.offset : 0)
-      .limit(params.limit ? params.limit : 20);
+      .limit(params.limit ? params.limit : 20)
+      .populate({
+        path: params?.noJoinParent ? '' : 'parent',
+        select: params?.noJoinParent ? '' : '_id user content createdAt type',
+        transform: doc => {
+          if (doc) {
+            const { _id, ...rest } = doc.toObject();
+            return { id: _id, ...rest };
+          }
+          return doc;
+        }
+      });
 
     return snaps.map(snap => ({
       id: snap._id,
       user: snap.user,
       content: snap.content,
-      createdAt: snap.createdAt
+      createdAt: snap.createdAt,
+      parent: snap.parent,
+      type: snap.type
     }));
   }
 
-  async findById(id: string): Promise<SnapResponse> {
+  async getCommentsPerTwit(twitsIds: string[]): Promise<Map<string, number>> {
+    const parentIdCounts = new Map<string, number>();
+
+    await TwitSnap.find({ parent: { $in: twitsIds }, type: 'comment' }).then(documents => {
+      documents.forEach(doc => {
+        const parentId = doc.parent;
+        parentIdCounts.set(parentId, (parentIdCounts.get(parentId) || 0) + 1);
+      });
+    });
+
+    return parentIdCounts;
+  }
+
+  async getRetwitsPerTwit(twitsIds: string[]): Promise<Map<string, number>> {
+    const parentIdCounts = new Map<string, number>();
+
+    await TwitSnap.find({ parent: { $in: twitsIds }, type: 'retwit' }).then(documents => {
+      documents.forEach(doc => {
+        const parentId = doc.parent;
+        parentIdCounts.set(parentId, (parentIdCounts.get(parentId) || 0) + 1);
+      });
+    });
+
+    return parentIdCounts;
+  }
+
+  async userRetwittedTwit(userId: number, twitId: string): Promise<boolean> {
+    if (!UUID.isValid(twitId)) {
+      throw new ValidationError('id', 'Invalid UUID');
+    }
+
+    var filter: RootFilterQuery<ISnapModel> = {
+      parent: twitId,
+      type: 'retwit',
+      'user.userId': userId
+    };
+
+    const snap = await TwitSnap.findOne(filter);
+
+    return snap ? true : false;
+  }
+
+  async deleteRetwit(parentId: string, userId: number) {
+    if (!UUID.isValid(parentId)) {
+      throw new ValidationError('id', 'Invalid UUID');
+    }
+
+    const result = await TwitSnap.deleteOne({
+      parent: parentId,
+      'user.userId': userId,
+      type: 'retwit'
+    });
+
+    if (result.deletedCount === 0) {
+      throw new NotFoundError(`retwit of user ${userId} for parent`, parentId);
+    }
+  }
+
+  async findById(id: string, params?: GetByIdParams): Promise<SnapResponse> {
     if (!UUID.isValid(id)) {
       throw new ValidationError('id', 'Invalid UUID');
     }
-    const snap = await TwitSnap.findById(id);
+
+    const snap = (await TwitSnap.findById(id).populate({
+      path: params?.noJoinParent ? '' : 'parent',
+      select: params?.noJoinParent ? '' : '_id user content createdAt type',
+      transform: doc => {
+        if (doc) {
+          const { _id, ...rest } = doc.toObject();
+          return { id: _id, ...rest };
+        }
+        return doc;
+      }
+    })) as unknown as ISnapModel;
+
     if (!snap) {
       throw new NotFoundError('Snap', id);
     }
-    return {
+
+    let response: SnapResponse = {
       id: snap._id,
       user: snap.user,
       content: snap.content,
-      createdAt: snap.createdAt
+      createdAt: snap.createdAt,
+      parent: snap.parent,
+      type: snap.type
     };
+
+    if (params?.withEntities) {
+      response.entities = snap.entities;
+    }
+    return response;
   }
 
   async deleteById(id: string): Promise<void> {
@@ -102,51 +216,55 @@ export class SnapRepository implements ISnapRepository {
     if (result.deletedCount === 0) {
       throw new NotFoundError('Snap', id);
     }
+    await Like.deleteMany({ twitId: id }); // Cascade
+    await TwitSnap.deleteMany({ parent: id, type: 'retwit' }); // Cascade
+    await TwitSnap.updateMany({ parent: id }, { $set: { parent: null } });
   }
 
   private filterSnapByDate(params: GetAllParams, filter: RootFilterQuery<ISnapModel>) {
-      if (params.createdAt) {
-        if (params.exactDate) {
-          const year = params.createdAt.substring(0, 4);
-          const month = params.createdAt.substring(5, 7).padStart(2, '0');
-          const day = params.createdAt.substring(8, 10).padStart(2, '0');
+    if (params.createdAt) {
+      if (params.exactDate) {
+        const year = params.createdAt.substring(0, 4);
+        const month = params.createdAt.substring(5, 7).padStart(2, '0');
+        const day = params.createdAt.substring(8, 10).padStart(2, '0');
 
-          const nextMoth = (parseInt(month) % 12 + 1).toString().padStart(2, '0');
-          const nextYear = (parseInt(month) === 12 ? (parseInt(year) + 1).toString() : year);
+        const nextMoth = ((parseInt(month) % 12) + 1).toString().padStart(2, '0');
+        const nextYear = parseInt(month) === 12 ? (parseInt(year) + 1).toString() : year;
 
-          if (params.createdAt.length === 4) {
-            filter = {
-              ...filter,
-              createdAt: { $gte: `${year}-01-01T00:00:00.000Z`, $lt: `${parseInt(year) + 1}-01-01T00:00:00.000Z` }
-            };
-          } else if (params.createdAt.length === 7) {
-            filter = {
-              ...filter,
-              createdAt: {
-                $gte: `${year}-${month}-01T00:00:00.000Z`,
-                $lt: `${nextYear}-${nextMoth}-01T00:00:00.000Z`
-              }
-            };
-          } else if (params.createdAt.length >= 10) {
-            filter = {
-              ...filter,
-              createdAt: {
-                $gte: `${year}-${month}-${day}T00:00:00.000Z`,
-                $lt: `${nextYear}-${month}-${(parseInt(day) + 1).toString().padStart(2, '0')}T00:00:00.000Z`
-              }
-            };
-          }
-        } else {
+        if (params.createdAt.length === 4) {
           filter = {
             ...filter,
-            createdAt: params.older ? { $lt: params.createdAt } : { $gt: params.createdAt }
+            createdAt: {
+              $gte: `${year}-01-01T00:00:00.000Z`,
+              $lt: `${parseInt(year) + 1}-01-01T00:00:00.000Z`
+            }
+          };
+        } else if (params.createdAt.length === 7) {
+          filter = {
+            ...filter,
+            createdAt: {
+              $gte: `${year}-${month}-01T00:00:00.000Z`,
+              $lt: `${nextYear}-${nextMoth}-01T00:00:00.000Z`
+            }
+          };
+        } else if (params.createdAt.length >= 10) {
+          filter = {
+            ...filter,
+            createdAt: {
+              $gte: `${year}-${month}-${day}T00:00:00.000Z`,
+              $lt: `${nextYear}-${month}-${(parseInt(day) + 1).toString().padStart(2, '0')}T00:00:00.000Z`
+            }
           };
         }
+      } else {
+        filter = {
+          ...filter,
+          createdAt: params.older ? { $lt: params.createdAt } : { $gt: params.createdAt }
+        };
       }
-      return filter;
+    }
+    return filter;
   }
-
-
 
   async totalAmount(params: GetAllParams): Promise<number> {
     var filter: RootFilterQuery<ISnapModel> = { content: { $regex: params.has, $options: 'miu' } };
@@ -196,5 +314,26 @@ export class SnapRepository implements ISnapRepository {
       }))
     ];
     return { data: sample };
+  }
+
+  async editById(id: string, edited_content: string, entities: Entities): Promise<SnapResponse> {
+    if (!UUID.isValid(id)) {
+      throw new ValidationError('id', 'Invalid UUID');
+    }
+
+    const snap = await TwitSnap.findById(id);
+    if (!snap) {
+      throw new NotFoundError('Snap', id);
+    }
+
+    snap.content = edited_content;
+    snap.entities = entities;
+    await snap.save();
+    return {
+      id: snap._id,
+      user: snap.user,
+      content: snap.content,
+      createdAt: snap.createdAt
+    };
   }
 }

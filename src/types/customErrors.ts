@@ -29,9 +29,28 @@ export class AuthenticationError extends Error {
   }
 }
 
+export class BlockedError extends Error {
+  constructor() {
+    super('Blocked error');
+    this.name = 'BlockedError';
+  }
+}
+
 export class ServiceUnavailable extends Error {
   constructor() {
     super('Service Unavailable error');
     this.name = 'ServiceUnavailable';
+  }
+}
+
+export class EntityAlreadyExistsError extends Error {
+  entityName: string;
+  detail: string;
+
+  constructor(entityName: string, detail: string) {
+    super(`${entityName} already exists`);
+    this.entityName = entityName;
+    this.detail = detail;
+    this.name = 'EntityAlreadyExistsError';
   }
 }

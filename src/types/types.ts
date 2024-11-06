@@ -35,6 +35,7 @@ export type SnapRankSample = {
 export type GetAllParams = {
   older: boolean;
   byFollowed: boolean;
+  noJoinParent?: boolean;
   followedIds?: number[];
   limit?: number;
   offset?: number;
@@ -44,6 +45,15 @@ export type GetAllParams = {
   hashtag?: string;
   rank?: string;
   exactDate?: boolean;
+  withEntities?: boolean;
+  parent?: string;
+  type?: string[];
+  excludeTwits?: string[];
+};
+
+export type GetByIdParams = {
+  withEntities?: boolean;
+  noJoinParent?: boolean;
 };
 
 export type SnapResponse = {
@@ -53,6 +63,12 @@ export type SnapResponse = {
   createdAt: string;
   likesCount?: number;
   userLiked?: boolean;
+  userRetwitted?: boolean;
+  retwitCount?: number;
+  commentCount?: number;
+  entities?: Entities;
+  parent?: TwitSnap | string | null;
+  type?: string;
 };
 
 export type LikeResponse = {
@@ -61,11 +77,12 @@ export type LikeResponse = {
   createdAt: string;
 };
 
-export type CreateSnapBody = {
+export type SnapBody = {
   content: string;
-  authorId: number;
-  authorName: string;
-  authorUsername: string;
+  user: TwitUser;
+  type: string;
+  parent: string;
+  entities?: Entities;
 };
 
 export interface TwitSnap {
@@ -74,6 +91,7 @@ export interface TwitSnap {
   user: TwitUser;
   content: string;
   entities: Entities;
+  parent: string | TwitSnap;
   //inReplyToTweetId: string | null;
   //inReplyToUserId: string | null;
   //lang: string;
