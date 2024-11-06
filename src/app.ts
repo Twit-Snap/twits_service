@@ -9,7 +9,6 @@ import { errorHandler } from './middleware/errorHandler';
 import { logMiddleware } from './middleware/logMiddleware';
 import likeRoutes from './routes/likesRoutes';
 import snapRoutes from './routes/snapRoutes';
-import { SnapService } from './service/snapService';
 import logger from './utils/logger';
 
 // Función para inicializar el entorno
@@ -61,10 +60,7 @@ export const connectToMongoDB = async () => {
     await mongoose.connect(process.env.MONGODB_URI as string);
     logger.info('Connected to MongoDB');
 
-    const snapsToFeed = await new SnapService().loadSnapsToFeedAlgorithm();
-    if (snapsToFeed.data.length > 0) {
-      await new TwitController().loadSnapsToFeedAlgorithm(snapsToFeed);
-    }
+    await new TwitController().loadSnapsToFeedAlgorithm();
   } catch (err) {
     logger.error('MongoDB connection error:', err);
     process.exit(1);
