@@ -20,6 +20,7 @@ import {
   User
 } from '../types/types';
 import removeDuplicates from '../utils/removeDups/removeDups';
+import { removePrivateSnaps } from '../utils/removePrivateSnaps/removePrivateSnaps';
 
 export class TwitController implements ITwitController {
   validateContent(content: string | undefined): string {
@@ -245,7 +246,9 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     snaps = user.type === 'user' ? await twitController.addFollowState(user, snaps) : snaps;
     const resultInteractions = await new LikeService().addLikeInteractions(user.userId, snaps);
 
-    res.status(200).json({ data: resultInteractions });
+    const final_snaps = removePrivateSnaps(user, resultInteractions);
+
+    res.status(200).json({ data: final_snaps });
   } catch (error) {
     next(error);
   }
