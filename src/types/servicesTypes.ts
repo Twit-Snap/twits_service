@@ -1,4 +1,4 @@
-import { GetAllParams, GetByIdParams, LikeResponse, SnapBody, SnapResponse } from './types';
+import { GetAllParams, GetByIdParams, LikeResponse, BookmarkResponse, SnapBody, SnapResponse } from './types';
 
 export interface ISnapService {
   createSnap(snapBody: SnapBody): Promise<SnapResponse>;
@@ -12,4 +12,12 @@ export interface ILikeService {
   removeLike(userId: number, twitId: string): Promise<void>;
   getLikesByUser(userId: number): Promise<SnapResponse[]>;
   addLikeInteractions(userId: number, twits: SnapResponse[]): Promise<SnapResponse[]>;
+}
+
+export interface IBookmarkService {
+  getBookmarksByTwit(twitId: string): Promise<number>;
+  addBookmark(userId: number, twitId: string): Promise<BookmarkResponse>;
+  removeBookmark(userId: number, twitId: string): Promise<void>;
+  getBookmarksByUser(userId: number): Promise<SnapResponse[]>;
+  addBookmarkInteractions(userId: number, twits: SnapResponse[]): Promise<SnapResponse[]>;
 }

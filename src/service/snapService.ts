@@ -12,6 +12,7 @@ import {
   SnapResponse
 } from '../types/types';
 import { LikeService } from './likeService';
+import { BookmarkService } from './bookmarkService';
 
 export class SnapService implements ISnapService {
   private extractHashTags(content: string): Hashtag[] {
@@ -55,6 +56,7 @@ export class SnapService implements ISnapService {
 
   async addInteractions(userId: number, snaps: SnapResponse[]): Promise<SnapResponse[]> {
     snaps = await new LikeService().addLikeInteractions(userId, snaps);
+    snaps = await new BookmarkService().addBookmarkInteractions(userId, snaps);
     snaps = await this.addCommentInteractions(snaps);
     snaps = await this.addRetwitInteractions(userId, snaps);
     return snaps;
