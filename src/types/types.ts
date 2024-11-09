@@ -48,6 +48,7 @@ export type GetAllParams = {
   withEntities?: boolean;
   parent?: string;
   type?: string[];
+  bookmarks?: boolean;
   excludeTwits?: string[];
 };
 
@@ -66,6 +67,8 @@ export type SnapResponse = {
   userLiked?: boolean;
   userRetwitted?: boolean;
   retwitCount?: number;
+  userBookmarked?: boolean;
+  bookmarkCount?: number;
   commentCount?: number;
   entities?: Entities;
   parent?: TwitSnap | string | null;
@@ -76,6 +79,12 @@ export type LikeResponse = {
   userId: number;
   twitId: string;
   createdAt: string;
+};
+
+export type BookmarkResponse = {
+  userId: number;
+  twitId: string;
+  bookmarkedAt: string;
 };
 
 export type SnapBody = {

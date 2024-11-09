@@ -8,3 +8,7 @@ export interface ITwitController {
   validateContent(content: string | undefined): string;
   getFollowedIds(user: JwtUserPayload): Promise<number[]>;
 }
+
+export interface IBookmarkController {
+  validateTwitId(twitId: string | undefined): string;
+}

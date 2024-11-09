@@ -9,6 +9,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { logMiddleware } from './middleware/logMiddleware';
 import likeRoutes from './routes/likesRoutes';
 import snapRoutes from './routes/snapRoutes';
+import bookmarkRoutes from './routes/bookmarkRoutes';
 import logger from './utils/logger';
 
 // Función para inicializar el entorno
@@ -50,6 +51,7 @@ app.use(authMiddleware);
 // Routes
 app.use('/snaps', snapRoutes);
 app.use('/likes', likeRoutes);
+app.use('/bookmarks', bookmarkRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

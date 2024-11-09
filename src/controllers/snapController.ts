@@ -2,6 +2,7 @@ import axios from 'axios';
 import { NextFunction, Request, Response } from 'express';
 import { JWTService } from '../service/jwtService';
 import { SnapService } from '../service/snapService';
+import { BookmarkService } from '../service/bookmarkService';
 import { ITwitController } from '../types/controllerTypes';
 import {
   AuthenticationError,
@@ -283,6 +284,7 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       noJoinParent: req.query.noJoinParent === 'true',
       parent: req.query.parent?.toString(),
       type: req.query.type ? JSON.parse(req.query.type?.toString()) : undefined,
+      bookmarks: req.query.bookmarks === 'true',
       excludeTwits: []
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -318,14 +320,19 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
 
     const twitController = new TwitController();
 
-    if (params.byFollowed) {
-      params.followedIds = await twitController.getFollowedIds(user);
+    if (params.bookmarks) {
+      const bookmarkedSnaps = await new BookmarkService().getBookmarksByUser(user.userId);
+      snaps.push(...bookmarkedSnaps);
+    } else {
+      if (params.byFollowed) {
+        params.followedIds = await twitController.getFollowedIds(user);
+      }
+
+      new TwitController().validateCreatedAt(params.createdAt);
+
+      const result: SnapResponse[] = await new SnapService().getAllSnaps(params);
+      snaps.push(...result);
     }
-
-    new TwitController().validateCreatedAt(params.createdAt);
-
-    const result: SnapResponse[] = await new SnapService().getAllSnaps(params);
-    snaps.push(...result);
 
     //Filter out duplicates returned by either of the two methods
     snaps = params.rank ? removeDuplicates(snaps) : snaps;
