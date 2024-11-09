@@ -5,9 +5,9 @@ import {
   GetAllParams,
   GetByIdParams,
   RankRequest,
+  SnapBody,
   SnapRankSample,
-  SnapResponse,
-  TwitUser
+  SnapResponse
 } from '../types/types';
 import { UUID } from '../utils/uuid';
 import { LikeRepository } from './likeRepository';
@@ -16,7 +16,7 @@ import TwitSnap, { ISnapModel } from './models/Snap';
 
 export interface ISnapRepository {
   findAll(params: GetAllParams): Promise<SnapResponse[]>;
-  create(message: string, user: TwitUser, entities: Entities, privacy: string): Promise<SnapResponse>;
+  create(snapBody: SnapBody): Promise<SnapResponse>;
   findById(id: string, params?: GetByIdParams): Promise<SnapResponse>;
   deleteById(id: string): Promise<void>;
   totalAmount(params: GetAllParams): Promise<number>;
@@ -24,13 +24,15 @@ export interface ISnapRepository {
 }
 
 export class SnapRepository implements ISnapRepository {
-  async create(content: string, user: TwitUser, entities: Entities, privacy: string): Promise<SnapResponse> {
+  async create(snapBody: SnapBody): Promise<SnapResponse> {
     const snap = new TwitSnap({
       _id: UUID.generate(),
-      content,
-      user,
-      privacy,
-      entities,
+      content: snapBody.content,
+      user: snapBody.user,
+      entities: snapBody.entities,
+      privacy: snapBody.privacy,
+      parent: snapBody.parent || null,
+      type: snapBody.type || 'original',
       createdAt: new Date().toISOString()
     });
     const savedSnap = await snap.save();
@@ -39,14 +41,33 @@ export class SnapRepository implements ISnapRepository {
       user: savedSnap.user,
       content: savedSnap.content,
       createdAt: savedSnap.createdAt,
-      privacy: savedSnap.privacy
+      privacy: savedSnap.privacy,
+      parent: savedSnap.parent,
+      type: savedSnap.type
     };
   }
 
   async findAll(params: GetAllParams): Promise<SnapResponse[]> {
-    var filter: RootFilterQuery<ISnapModel> = { content: { $regex: params.has, $options: 'miu' } };
+    var filter: RootFilterQuery<ISnapModel> = {
+      content: { $regex: params.has, $options: 'miu' },
+      id: { $nin: params.excludeTwits }
+    };
 
     filter = this.filterSnapByDate(params, filter);
+
+    if (params.type) {
+      filter = {
+        ...filter,
+        type: { $in: params.type }
+      };
+    }
+
+    if (params.parent) {
+      filter = {
+        ...filter,
+        parent: params.parent
+      };
+    }
 
     if (params.username) {
       filter = {
@@ -72,22 +93,105 @@ export class SnapRepository implements ISnapRepository {
     const snaps = await TwitSnap.find(filter)
       .sort({ createdAt: -1 })
       .skip(params.offset ? params.offset : 0)
-      .limit(params.limit ? params.limit : 20);
+      .limit(params.limit ? params.limit : 20)
+      .populate({
+        path: params?.noJoinParent ? '' : 'parent',
+        select: params?.noJoinParent ? '' : '_id user content createdAt type',
+        transform: doc => {
+          if (doc) {
+            const { _id, ...rest } = doc.toObject();
+            return { id: _id, ...rest };
+          }
+          return doc;
+        }
+      });
 
     return snaps.map(snap => ({
       id: snap._id,
       user: snap.user,
       content: snap.content,
       createdAt: snap.createdAt,
-      privacy: snap.privacy
+      privacy: snap.privacy,
+      parent: snap.parent,
+      type: snap.type
     }));
   }
 
-  async findById(id: string, params?: GetByIdParams | GetAllParams): Promise<SnapResponse> {
+  async getCommentsPerTwit(twitsIds: string[]): Promise<Map<string, number>> {
+    const parentIdCounts = new Map<string, number>();
+
+    await TwitSnap.find({ parent: { $in: twitsIds }, type: 'comment' }).then(documents => {
+      documents.forEach(doc => {
+        const parentId = doc.parent;
+        parentIdCounts.set(parentId, (parentIdCounts.get(parentId) || 0) + 1);
+      });
+    });
+
+    return parentIdCounts;
+  }
+
+  async getRetwitsPerTwit(twitsIds: string[]): Promise<Map<string, number>> {
+    const parentIdCounts = new Map<string, number>();
+
+    await TwitSnap.find({ parent: { $in: twitsIds }, type: 'retwit' }).then(documents => {
+      documents.forEach(doc => {
+        const parentId = doc.parent;
+        parentIdCounts.set(parentId, (parentIdCounts.get(parentId) || 0) + 1);
+      });
+    });
+
+    return parentIdCounts;
+  }
+
+  async userRetwittedTwit(userId: number, twitId: string): Promise<boolean> {
+    if (!UUID.isValid(twitId)) {
+      throw new ValidationError('id', 'Invalid UUID');
+    }
+
+    var filter: RootFilterQuery<ISnapModel> = {
+      parent: twitId,
+      type: 'retwit',
+      'user.userId': userId
+    };
+
+    const snap = await TwitSnap.findOne(filter);
+
+    return snap ? true : false;
+  }
+
+  async deleteRetwit(parentId: string, userId: number) {
+    if (!UUID.isValid(parentId)) {
+      throw new ValidationError('id', 'Invalid UUID');
+    }
+
+    const result = await TwitSnap.deleteOne({
+      parent: parentId,
+      'user.userId': userId,
+      type: 'retwit'
+    });
+
+    if (result.deletedCount === 0) {
+      throw new NotFoundError(`retwit of user ${userId} for parent`, parentId);
+    }
+  }
+
+  async findById(id: string, params?: GetByIdParams): Promise<SnapResponse> {
     if (!UUID.isValid(id)) {
       throw new ValidationError('id', 'Invalid UUID');
     }
-    const snap = await TwitSnap.findById(id);
+
+    const snap = (await TwitSnap.findById(id).populate({
+      path: params?.noJoinParent ? '' : 'parent',
+      select: params?.noJoinParent ? '' : '_id user content createdAt type',
+      transform: doc => {
+        if (doc) {
+          const { _id, ...rest } = doc.toObject();
+          return { id: _id, ...rest };
+        }
+        return doc;
+      }
+    })) as unknown as ISnapModel;
+
     if (!snap) {
       throw new NotFoundError('Snap', id);
     }
@@ -97,7 +201,9 @@ export class SnapRepository implements ISnapRepository {
       user: snap.user,
       content: snap.content,
       createdAt: snap.createdAt,
-      privacy: snap.privacy
+      privacy: snap.privacy,
+      parent: snap.parent,
+      type: snap.type
     };
 
     if (params?.withEntities) {
@@ -114,7 +220,9 @@ export class SnapRepository implements ISnapRepository {
     if (result.deletedCount === 0) {
       throw new NotFoundError('Snap', id);
     }
-    await Like.deleteMany({ twitId: id }); //Cascade
+    await Like.deleteMany({ twitId: id }); // Cascade
+    await TwitSnap.deleteMany({ parent: id, type: 'retwit' }); // Cascade
+    await TwitSnap.updateMany({ parent: id }, { $set: { parent: null } });
   }
 
   private filterSnapByDate(params: GetAllParams, filter: RootFilterQuery<ISnapModel>) {

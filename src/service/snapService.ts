@@ -1,4 +1,5 @@
 import { SnapRepository } from '../repositories/snapRepository';
+import { EntityAlreadyExistsError } from '../types/customErrors';
 import { ISnapService } from '../types/servicesTypes';
 import {
   Entities,
@@ -6,10 +7,11 @@ import {
   GetByIdParams,
   Hashtag,
   RankRequest,
+  SnapBody,
   SnapRankSample,
-  SnapResponse,
-  TwitUser
+  SnapResponse
 } from '../types/types';
+import { LikeService } from './likeService';
 
 export class SnapService implements ISnapService {
   private extractHashTags(content: string): Hashtag[] {
@@ -17,12 +19,92 @@ export class SnapService implements ISnapService {
     return hashTags ? hashTags.map(tag => ({ text: tag })) : [];
   }
 
-  async createSnap(content: string, user: TwitUser, privacySettings : string): Promise<SnapResponse> {
+  private async validateParent(parent: string | undefined) {
+    if (!parent) {
+      return;
+    }
+
+    await this.getSnapById(parent); // repository validation
+  }
+
+  async createSnap(snapBody: SnapBody): Promise<SnapResponse> {
+    await this.validateParent(snapBody.parent);
+
     const entities: Entities = {
-      hashtags: this.extractHashTags(content)
+      hashtags: this.extractHashTags(snapBody.content)
     };
-    const savedSnap: SnapResponse = await new SnapRepository().create(content, user, entities, privacySettings);
+
+    const repository = new SnapRepository();
+
+    if (snapBody.type === 'retwit') {
+      await repository
+        .userRetwittedTwit(snapBody.user.userId, snapBody.parent)
+        .then(alreadyRetwitted => {
+          if (alreadyRetwitted) {
+            throw new EntityAlreadyExistsError(
+              'twit',
+              `You already retwitted ${snapBody.parent} already exist`
+            );
+          }
+        });
+    }
+
+    const savedSnap: SnapResponse = await repository.create({ ...snapBody, entities });
     return savedSnap;
+  }
+
+  async addInteractions(userId: number, snaps: SnapResponse[]): Promise<SnapResponse[]> {
+    snaps = await new LikeService().addLikeInteractions(userId, snaps);
+    snaps = await this.addCommentInteractions(snaps);
+    snaps = await this.addRetwitInteractions(userId, snaps);
+    return snaps;
+  }
+
+  async addCommentInteractions(snaps: SnapResponse[]) {
+    const retwitsPerTwit = await new SnapRepository().getCommentsPerTwit(
+      snaps.map(twit =>
+        twit.type === 'retwit' ? (twit.parent as unknown as SnapResponse).id : twit.id
+      )
+    );
+
+    return await Promise.all(
+      snaps.map(async twit => {
+        const twitId =
+          twit.type === 'retwit' ? (twit.parent as unknown as SnapResponse).id : twit.id;
+        return {
+          ...twit,
+          commentCount: retwitsPerTwit.get(twitId) || 0
+        };
+      })
+    );
+  }
+
+  async addRetwitInteractions(userId: number, snaps: SnapResponse[]) {
+    const retwitsPerTwit = await new SnapRepository().getRetwitsPerTwit(
+      snaps.map(twit =>
+        twit.type === 'retwit' ? (twit.parent as unknown as SnapResponse).id : twit.id
+      )
+    );
+
+    return await Promise.all(
+      snaps
+        .filter(twit =>
+          twit.type === 'retwit' ? userId === twit.user.userId || twit.user.following : true
+        )
+        .map(async twit => {
+          const twitId =
+            twit.type === 'retwit' ? (twit.parent as unknown as SnapResponse).id : twit.id;
+          return {
+            ...twit,
+            userRetwitted: await new SnapRepository().userRetwittedTwit(userId, twitId),
+            retwitCount: retwitsPerTwit.get(twitId) || 0
+          };
+        })
+    );
+  }
+
+  async deleteRetwit(parentId: string, userId: number) {
+    await new SnapRepository().deleteRetwit(parentId, userId);
   }
 
   async getAllSnaps(params: GetAllParams) {
@@ -30,7 +112,7 @@ export class SnapService implements ISnapService {
     return snaps;
   }
 
-  async getSnapById(twitId: string, params: GetByIdParams | GetAllParams): Promise<SnapResponse> {
+  async getSnapById(twitId: string, params?: GetByIdParams): Promise<SnapResponse> {
     const snap: SnapResponse = await new SnapRepository().findById(twitId, params);
     return snap;
   }

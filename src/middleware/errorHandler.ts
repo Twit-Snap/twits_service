@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import {
   AuthenticationError,
   BlockedError,
+  EntityAlreadyExistsError,
   NotFoundError,
   ServiceUnavailable,
   ValidationError
@@ -49,6 +50,18 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
       status: 403,
       detail: `Blocked error`,
       instance: req.originalUrl
+    });
+  } else if (err instanceof EntityAlreadyExistsError) {
+    console.warn(`EntityAlreadyExistsError: ${err.message}`, {
+      entityName: err.entityName
+    });
+    res.status(409).json({
+      type: 'about:blank',
+      title: 'Conflict',
+      status: 409,
+      detail: err.detail,
+      instance: req.originalUrl,
+      'custom-field': err.entityName
     });
   } else if (err instanceof ServiceUnavailable) {
     console.warn(`ServiceUnavailable: ${err.message}`);

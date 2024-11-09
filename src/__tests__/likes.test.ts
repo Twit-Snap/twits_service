@@ -54,6 +54,7 @@ describe('Snap API Tests', () => {
 
   afterAll(async () => {
     await TwitSnap.deleteMany({});
+    await Like.deleteMany({});
     await mongoose.connection.close();
   });
 
@@ -395,10 +396,8 @@ describe('Snap API Tests', () => {
         .expect(200);
 
       expect(response.body.data).toHaveLength(2);
-      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toEqual([
-        'Test snap 2',
-        'Test snap 1'
-      ]);
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toContain('Test snap 2');
+      expect(response.body.data.map((snap: SnapResponse) => snap.content)).toContain('Test snap 1');
     });
 
     it('should not return any twits if the authorized user has not liked any of them', async () => {

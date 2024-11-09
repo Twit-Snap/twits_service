@@ -127,5 +127,83 @@ describe('Snap API', () => {
       );
       expect(response.body).toHaveProperty('instance');
     });
+
+    it('should return 400 for user without id', async () => {
+      const response = await request(app)
+        .post('/snaps')
+        .send({
+          user: {
+            userId: undefined,
+            name: 'Test User 1',
+            username: 'testuser1'
+          },
+          content: 'a',
+          entities: {
+            hashtags: []
+          }
+        })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(400);
+
+      expect(response.body).toHaveProperty('type', 'about:blank');
+      expect(response.body).toHaveProperty('title', 'Validation Error');
+      expect(response.body).toHaveProperty('status', 400);
+      expect(response.body).toHaveProperty('detail', 'User ID must be specified');
+      expect(response.body).toHaveProperty('instance');
+    });
+
+    it('should return 400 for user without username', async () => {
+      const response = await request(app)
+        .post('/snaps')
+        .send({
+          user: {
+            userId: 1,
+            name: 'Test User 1',
+            username: undefined
+          },
+          content: 'a',
+          entities: {
+            hashtags: []
+          }
+        })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(400);
+
+      expect(response.body).toHaveProperty('type', 'about:blank');
+      expect(response.body).toHaveProperty('title', 'Validation Error');
+      expect(response.body).toHaveProperty('status', 400);
+      expect(response.body).toHaveProperty('detail', 'User username must be specified');
+      expect(response.body).toHaveProperty('instance');
+    });
+
+    it('should return 400 for user without name', async () => {
+      const response = await request(app)
+        .post('/snaps')
+        .send({
+          user: {
+            userId: 1,
+            name: undefined,
+            username: 'testuser1'
+          },
+          content: 'a',
+          entities: {
+            hashtags: []
+          }
+        })
+        .set({
+          Authorization: `Bearer ${auth}`
+        })
+        .expect(400);
+
+      expect(response.body).toHaveProperty('type', 'about:blank');
+      expect(response.body).toHaveProperty('title', 'Validation Error');
+      expect(response.body).toHaveProperty('status', 400);
+      expect(response.body).toHaveProperty('detail', 'User name must be specified');
+      expect(response.body).toHaveProperty('instance');
+    });
   });
 });
