@@ -21,6 +21,7 @@ import {
   User
 } from '../types/types';
 import removeDuplicates from '../utils/removeDups/removeDups';
+import { removePrivateSnaps } from '../utils/removePrivateSnaps/removePrivateSnaps';
 
 export class TwitController implements ITwitController {
   validateContent(content: string | undefined): string {
@@ -242,6 +243,7 @@ export const createSnap = async (
     let content: string | undefined = req.body.content;
     const type: string = req.body.type || 'original';
     const parent = req.body.parent;
+    const privacy: string = req.body.privacy || 'Everyone';
 
     const controller = new TwitController();
 
@@ -253,7 +255,8 @@ export const createSnap = async (
       content: content,
       type: type,
       parent: parent,
-      user: user
+      user: user,
+      privacy: req.body.privacy
     };
 
     const savedSnap: SnapResponse = await new SnapService().createSnap(snapBody);
@@ -331,7 +334,9 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     snaps = user.type === 'user' ? await twitController.addFollowState(user, snaps) : snaps;
     const resultInteractions = await new SnapService().addInteractions(user.userId, snaps);
 
-    res.status(200).json({ data: resultInteractions });
+    const final_snaps = removePrivateSnaps(user, resultInteractions);
+
+    res.status(200).json({ data: final_snaps });
   } catch (error) {
     next(error);
   }

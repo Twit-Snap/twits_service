@@ -30,6 +30,7 @@ export class SnapRepository implements ISnapRepository {
       content: snapBody.content,
       user: snapBody.user,
       entities: snapBody.entities,
+      privacy: snapBody.privacy,
       parent: snapBody.parent || null,
       type: snapBody.type || 'original',
       createdAt: new Date().toISOString()
@@ -40,6 +41,7 @@ export class SnapRepository implements ISnapRepository {
       user: savedSnap.user,
       content: savedSnap.content,
       createdAt: savedSnap.createdAt,
+      privacy: savedSnap.privacy,
       parent: savedSnap.parent,
       type: savedSnap.type
     };
@@ -109,6 +111,7 @@ export class SnapRepository implements ISnapRepository {
       user: snap.user,
       content: snap.content,
       createdAt: snap.createdAt,
+      privacy: snap.privacy,
       parent: snap.parent,
       type: snap.type
     }));
@@ -198,6 +201,7 @@ export class SnapRepository implements ISnapRepository {
       user: snap.user,
       content: snap.content,
       createdAt: snap.createdAt,
+      privacy: snap.privacy,
       parent: snap.parent,
       type: snap.type
     };
@@ -333,7 +337,8 @@ export class SnapRepository implements ISnapRepository {
       id: snap._id,
       user: snap.user,
       content: snap.content,
-      createdAt: snap.createdAt
+      createdAt: snap.createdAt,
+      privacy: snap.privacy
     };
   }
 }

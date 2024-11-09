@@ -57,7 +57,8 @@ export class LikeRepository implements ILikeRepository {
         id: twit._id,
         user: twit.user,
         content: twit.content,
-        createdAt: twit.createdAt
+        createdAt: twit.createdAt,
+        privacy: twit.privacy
       };
     });
 
