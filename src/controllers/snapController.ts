@@ -321,7 +321,6 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       const bookmarkedSnaps = await new BookmarkService().getBookmarksByUser(user.userId);
       snaps.push(...bookmarkedSnaps);
     } else {
-
       if (params.byFollowed) {
         params.followedIds = await twitController.getFollowedIds(user);
       }
