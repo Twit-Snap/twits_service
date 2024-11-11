@@ -48,7 +48,9 @@ export class BookmarkRepository implements IBookmarkRepository {
   }
 
   async getBookmarksByUser(userId: number): Promise<SnapResponse[]> {
-    const bookmarks = await Bookmark.find({ userId: userId }).sort({ bookmarkedAt: -1 }).populate('twitId');
+    const bookmarks = await Bookmark.find({ userId: userId })
+      .sort({ bookmarkedAt: -1 })
+      .populate('twitId');
 
     const expandedBookmarks: SnapResponse[] = bookmarks.map(bookmark => {
       const twit: ISnapModel = bookmark.twitId as unknown as ISnapModel;
@@ -57,7 +59,8 @@ export class BookmarkRepository implements IBookmarkRepository {
         id: twit._id,
         user: twit.user,
         content: twit.content,
-        createdAt: twit.createdAt
+        createdAt: twit.createdAt,
+        privacy: twit.privacy
       };
     });
 
