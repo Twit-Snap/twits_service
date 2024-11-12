@@ -278,7 +278,7 @@ export const createSnap = async (
       type: type,
       parent: parent,
       user: user,
-      privacy: req.body.privacy
+      privacy: privacy
     };
 
     const savedSnap: SnapResponse = await new SnapService().createSnap(snapBody, userMentions);
