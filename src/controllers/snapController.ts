@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { NextFunction, Request, Response } from 'express';
+import { BookmarkService } from '../service/bookmarkService';
 import { JWTService } from '../service/jwtService';
 import { SnapService } from '../service/snapService';
-import { BookmarkService } from '../service/bookmarkService';
 import { ITwitController } from '../types/controllerTypes';
 import {
   AuthenticationError,
@@ -19,7 +19,8 @@ import {
   SnapResponse,
   TwitSnap,
   TwitUser,
-  User
+  User,
+  UserMention
 } from '../types/types';
 import removeDuplicates from '../utils/removeDups/removeDups';
 import { removePrivateSnaps } from '../utils/removePrivateSnaps/removePrivateSnaps';
@@ -215,6 +216,16 @@ export class TwitController implements ITwitController {
       });
   }
 
+  async validateMentions(
+    mentions: UserMention[],
+    authUser: JwtUserPayload
+  ): Promise<UserMention[]> {
+    return mentions.filter(({ username }) =>
+      this.getUser(username, authUser)
+        .then(() => false)
+        .catch(() => true)
+    );
+  }
 }
 
 export const getTotalAmount = async (req: Request, res: Response, next: NextFunction) => {
@@ -257,6 +268,11 @@ export const createSnap = async (
 
     const user = controller.validateTwitUser(req.body.user);
 
+    const authUser = (req as any).user;
+
+    let userMentions = new SnapService().extractMentions(content);
+    userMentions = await controller.validateMentions(userMentions, authUser);
+
     const snapBody = {
       content: content,
       type: type,
@@ -265,7 +281,7 @@ export const createSnap = async (
       privacy: req.body.privacy
     };
 
-    const savedSnap: SnapResponse = await new SnapService().createSnap(snapBody);
+    const savedSnap: SnapResponse = await new SnapService().createSnap(snapBody, userMentions);
     res.status(201).json({ data: savedSnap });
   } catch (error) {
     next(error);
@@ -363,7 +379,7 @@ export const getSnapById = async (
     const { id } = req.params;
 
     const params: GetByIdParams = {
-      withEntities: req.query.withEntities === 'true',
+      // withEntities: req.query.withEntities === 'true',
       noJoinParent: req.query.noJoinParent === 'true'
     };
 
@@ -417,10 +433,18 @@ export const editSnapById = async (
     const { id } = req.params;
     let edited_content: string | undefined = req.body.content;
 
-    edited_content = new TwitController().validateContent(edited_content);
-    await new SnapService().editSnapById(id, edited_content);
+    const controller = new TwitController();
 
-    await new TwitController().loadSnapsToFeedAlgorithm();
+    edited_content = controller.validateContent(edited_content);
+
+    const authUser = (req as any).user;
+
+    let userMentions = new SnapService().extractMentions(edited_content);
+    userMentions = await controller.validateMentions(userMentions, authUser);
+
+    await new SnapService().editSnapById(id, edited_content, userMentions);
+
+    await controller.loadSnapsToFeedAlgorithm();
 
     res.status(204).send();
   } catch (error) {
@@ -428,16 +452,12 @@ export const editSnapById = async (
   }
 };
 
-export const getTrendingTopics = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const getTrendingTopics = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const trendingTopics = await axios.post(`${process.env.FEED_ALGORITHM_URL}/trending`,
-      {limit : 5}
-    );
-    console.log('Fetched trending topics: ', trendingTopics.data.trends.data );
+    const trendingTopics = await axios.post(`${process.env.FEED_ALGORITHM_URL}/trending`, {
+      limit: 5
+    });
+    console.log('Fetched trending topics: ', trendingTopics.data.trends.data);
     res.status(200).json({ data: trendingTopics.data.trends.data });
   } catch (error) {
     next(error);

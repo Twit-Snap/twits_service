@@ -34,11 +34,12 @@ export class SnapService implements ISnapService {
     await this.getSnapById(parent); // repository validation
   }
 
-  async createSnap(snapBody: SnapBody): Promise<SnapResponse> {
+  async createSnap(snapBody: SnapBody, userMentions: UserMention[]): Promise<SnapResponse> {
     await this.validateParent(snapBody.parent);
 
     const entities: Entities = {
-      hashtags: this.extractHashTags(snapBody.content)
+      hashtags: this.extractHashTags(snapBody.content),
+      userMentions
     };
 
     const repository = new SnapRepository();
@@ -141,9 +142,14 @@ export class SnapService implements ISnapService {
     return await new SnapRepository().getSample(userId);
   }
 
-  async editSnapById(twitId: string, content: string): Promise<SnapResponse> {
+  async editSnapById(
+    twitId: string,
+    content: string,
+    userMentions: UserMention[]
+  ): Promise<SnapResponse> {
     const entities: Entities = {
-      hashtags: this.extractHashTags(content)
+      hashtags: this.extractHashTags(content),
+      userMentions
     };
     const snap: SnapResponse = await new SnapRepository().editById(twitId, content, entities);
     return snap;
