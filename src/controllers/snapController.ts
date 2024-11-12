@@ -138,27 +138,7 @@ export class TwitController implements ITwitController {
 
     const userDetails = await Promise.all(
       [...users].map(async username => {
-        return await axios
-          .get(`${process.env.USERS_SERVICE_URL}/users/${username}`, {
-            headers: { Authorization: `Bearer ${new JWTService().sign(user)}` },
-            params: { reduce: true }
-          })
-          .then(response => {
-            return response.data.data;
-          })
-          .catch(error => {
-            console.error(error.data);
-            switch (error.status) {
-              case 400:
-                throw new ValidationError(error.response.data.field, error.response.data.detail);
-              case 401:
-                throw new AuthenticationError();
-              case 404:
-                throw new NotFoundError('username', user.username);
-              case 500:
-                throw new ServiceUnavailable();
-            }
-          });
+        return await this.getUser(username, user);
       })
     );
 
@@ -210,6 +190,31 @@ export class TwitController implements ITwitController {
     });
     console.log('Snaps loaded to feed algorithm');
   }
+
+  async getUser(username: string, authUser: JwtUserPayload): Promise<TwitUser> {
+    return await axios
+      .get(`${process.env.USERS_SERVICE_URL}/users/${username}`, {
+        headers: { Authorization: `Bearer ${new JWTService().sign(authUser)}` },
+        params: { reduce: true }
+      })
+      .then(response => {
+        return response.data.data;
+      })
+      .catch(error => {
+        console.error(error.data);
+        switch (error.status) {
+          case 400:
+            throw new ValidationError(error.response.data.field, error.response.data.detail);
+          case 401:
+            throw new AuthenticationError();
+          case 404:
+            throw new NotFoundError('username', username);
+          case 500:
+            throw new ServiceUnavailable();
+        }
+      });
+  }
+
 }
 
 export const getTotalAmount = async (req: Request, res: Response, next: NextFunction) => {
