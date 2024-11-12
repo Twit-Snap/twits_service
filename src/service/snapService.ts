@@ -9,15 +9,21 @@ import {
   RankRequest,
   SnapBody,
   SnapRankSample,
-  SnapResponse
+  SnapResponse,
+  UserMention
 } from '../types/types';
-import { LikeService } from './likeService';
 import { BookmarkService } from './bookmarkService';
+import { LikeService } from './likeService';
 
 export class SnapService implements ISnapService {
   private extractHashTags(content: string): Hashtag[] {
     const hashTags = content.match(/#\w+/g);
     return hashTags ? hashTags.map(tag => ({ text: tag })) : [];
+  }
+
+  extractMentions(content: string): UserMention[] {
+    const mentions = content.match(/@\w+/g);
+    return mentions ? mentions.map(username => ({ username: username.slice(1) })) : [];
   }
 
   private async validateParent(parent: string | undefined) {
