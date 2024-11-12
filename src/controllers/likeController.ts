@@ -3,6 +3,7 @@ import { LikeService } from '../service/likeService';
 import { ILikeController } from '../types/controllerTypes';
 import { ValidationError } from '../types/customErrors';
 import { UUID } from '../utils/uuid';
+import { MetricController } from './metricController';
 
 export class LikeController implements ILikeController {
   validateTwitId(twitId: string | undefined): string {
@@ -49,7 +50,7 @@ export const addLike = async (
     const user = (req as any).user;
 
     const data = await new LikeService().addLike(user.userId, twitId);
-
+    await new MetricController().createLikeMetric(user.username);
     res.status(201).json({ data: data });
   } catch (error) {
     next(error);

@@ -211,6 +211,16 @@ export class TwitController implements ITwitController {
     });
     console.log('Snaps loaded to feed algorithm');
   }
+
+  async createTwitMetrics(username: string, type: string) {
+    if(type === 'original') {
+      await new MetricController().createLikeMetric(username);
+    }else if (type === 'retwit') {
+      await new MetricController().createRetwitMetric(username);
+    }else if(type === 'comment') {
+      await new MetricController().createCommentMetric(username);
+    }
+  }
 }
 
 export const getTotalAmount = async (req: Request, res: Response, next: NextFunction) => {
@@ -262,7 +272,8 @@ export const createSnap = async (
     };
 
     const savedSnap: SnapResponse = await new SnapService().createSnap(snapBody);
-    await new MetricController().createLikeMetric(savedSnap.user.username);
+    await controller.createTwitMetrics(user.username, type);
+
     res.status(201).json({ data: savedSnap });
   } catch (error) {
     next(error);
