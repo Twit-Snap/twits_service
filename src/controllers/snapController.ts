@@ -23,6 +23,7 @@ import {
 } from '../types/types';
 import removeDuplicates from '../utils/removeDups/removeDups';
 import { removePrivateSnaps } from '../utils/removePrivateSnaps/removePrivateSnaps';
+import { MetricController } from './metricController';
 
 export class TwitController implements ITwitController {
   validateContent(content: string | undefined): string {
@@ -261,6 +262,7 @@ export const createSnap = async (
     };
 
     const savedSnap: SnapResponse = await new SnapService().createSnap(snapBody);
+    await new MetricController().createLikeMetric(savedSnap.user.username);
     res.status(201).json({ data: savedSnap });
   } catch (error) {
     next(error);
