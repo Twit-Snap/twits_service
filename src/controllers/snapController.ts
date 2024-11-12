@@ -24,6 +24,7 @@ import {
 } from '../types/types';
 import removeDuplicates from '../utils/removeDups/removeDups';
 import { removePrivateSnaps } from '../utils/removePrivateSnaps/removePrivateSnaps';
+import { sendPushNotification } from '../utils/sendNotification';
 
 export class TwitController implements ITwitController {
   validateContent(content: string | undefined): string {
@@ -219,12 +220,35 @@ export class TwitController implements ITwitController {
   async validateMentions(
     mentions: UserMention[],
     authUser: JwtUserPayload
-  ): Promise<UserMention[]> {
-    return mentions.filter(({ username }) =>
-      this.getUser(username, authUser)
-        .then(() => false)
-        .catch(() => true)
+  ): Promise<{ mentions: UserMention[]; users: TwitUser[] }> {
+    let users = await Promise.all(
+      mentions.map(({ username }) =>
+        this.getUser(username, authUser)
+          .then(user => user)
+          .catch(() => undefined)
+      )
     );
+
+    const filtered = users.filter(user => user != undefined);
+
+    return { mentions: filtered.map(user => ({ username: user.username })), users: filtered };
+  }
+
+  async notifyMentions(users: TwitUser[], twit: SnapResponse): Promise<void> {
+    users.forEach(user => {
+      if (!user.followed) {
+        return;
+      }
+
+      if (!user.expoToken) {
+        return;
+      }
+
+      sendPushNotification(user.expoToken, `${twit.user.username} mention you!`, 'Check it out!', {
+        params: { id: twit.id },
+        type: 'twit-mention'
+      });
+    });
   }
 }
 
@@ -270,8 +294,8 @@ export const createSnap = async (
 
     const authUser = (req as any).user;
 
-    let userMentions = new SnapService().extractMentions(content);
-    userMentions = await controller.validateMentions(userMentions, authUser);
+    const userMentions = new SnapService().extractMentions(content);
+    const filteredMentions = await controller.validateMentions(userMentions, authUser);
 
     const snapBody = {
       content: content,
@@ -281,7 +305,13 @@ export const createSnap = async (
       privacy: privacy
     };
 
-    const savedSnap: SnapResponse = await new SnapService().createSnap(snapBody, userMentions);
+    const savedSnap: SnapResponse = await new SnapService().createSnap(
+      snapBody,
+      filteredMentions.mentions
+    );
+
+    controller.notifyMentions(filteredMentions.users, savedSnap);
+
     res.status(201).json({ data: savedSnap });
   } catch (error) {
     next(error);
@@ -440,9 +470,15 @@ export const editSnapById = async (
     const authUser = (req as any).user;
 
     let userMentions = new SnapService().extractMentions(edited_content);
-    userMentions = await controller.validateMentions(userMentions, authUser);
+    const filteredMentions = await controller.validateMentions(userMentions, authUser);
 
-    await new SnapService().editSnapById(id, edited_content, userMentions);
+    const savedSnap = await new SnapService().editSnapById(
+      id,
+      edited_content,
+      filteredMentions.mentions
+    );
+
+    controller.notifyMentions(filteredMentions.users, savedSnap);
 
     await controller.loadSnapsToFeedAlgorithm();
 
