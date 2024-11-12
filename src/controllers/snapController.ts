@@ -291,7 +291,7 @@ export const createSnap = async (
     content = controller.validateTwitType(type, content, parent);
 
     const user = controller.validateTwitUser(req.body.user);
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const authUser = (req as any).user;
 
     const userMentions = new SnapService().extractMentions(content);
@@ -466,7 +466,7 @@ export const editSnapById = async (
     const controller = new TwitController();
 
     edited_content = controller.validateContent(edited_content);
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const authUser = (req as any).user;
 
     let userMentions = new SnapService().extractMentions(edited_content);
