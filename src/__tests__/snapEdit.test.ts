@@ -41,6 +41,9 @@ describe('Snap API Tests', () => {
       ...[
         http.get(`${process.env.FEED_ALGORITHM_URL}/`, () => {
           return HttpResponse.json({}, { status: 200 });
+        }),
+        http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+          return HttpResponse.json({}, { status: 200 });
         })
       ]
     );

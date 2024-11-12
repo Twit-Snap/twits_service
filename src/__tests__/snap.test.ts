@@ -39,7 +39,13 @@ describe('Snap API Tests', () => {
   beforeEach(async () => {
     await TwitSnap.deleteMany({});
     server.listen({ onUnhandledRequest: 'bypass' });
-    server.resetHandlers();
+    server.resetHandlers(
+      ...[
+        http.get(`${process.env.USERS_SERVICE_URL}/users/*`, () => {
+          return HttpResponse.json({}, { status: 200 });
+        })
+      ]
+    );
   });
 
   describe('GET /snaps', () => {
@@ -682,7 +688,7 @@ describe('Snap API Tests', () => {
 
       server.resetHandlers(
         ...[
-          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
+          http.get(`${process.env.USERS_SERVICE_URL}/users/*/followers`, () => {
             return HttpResponse.json([
               {
                 id: 2,
@@ -695,6 +701,9 @@ describe('Snap API Tests', () => {
                 username: 'TestUser4'
               }
             ]);
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/*`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -753,6 +762,9 @@ describe('Snap API Tests', () => {
         ...[
           http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
             return HttpResponse.json([]);
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -1128,6 +1140,9 @@ describe('Snap API Tests', () => {
         ...[
           http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
             return HttpResponse.json({ field: 'username', detail: user.username }, { status: 400 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -1187,6 +1202,9 @@ describe('Snap API Tests', () => {
         ...[
           http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
             return HttpResponse.json({}, { status: 401 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -1245,6 +1263,9 @@ describe('Snap API Tests', () => {
         ...[
           http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
             return HttpResponse.json({}, { status: 404 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -1304,6 +1325,9 @@ describe('Snap API Tests', () => {
           http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}/followers`, () => {
             // 500, users service is down
             return HttpResponse.json({}, { status: 500 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -1460,6 +1484,9 @@ describe('Snap API Tests', () => {
                 followed: false
               }
             });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -1503,6 +1530,9 @@ describe('Snap API Tests', () => {
                 followed: false
               }
             });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -1545,6 +1575,9 @@ describe('Snap API Tests', () => {
                 followed: true
               }
             });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -1587,6 +1620,9 @@ describe('Snap API Tests', () => {
                 followed: false
               }
             });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -1617,6 +1653,9 @@ describe('Snap API Tests', () => {
         ...[
           http.get(`${process.env.USERS_SERVICE_URL}/users/TestUser1`, () => {
             return HttpResponse.json({ field: 'username', detail: user.username }, { status: 400 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -1651,6 +1690,9 @@ describe('Snap API Tests', () => {
         ...[
           http.get(`${process.env.USERS_SERVICE_URL}/users/TestUser1`, () => {
             return HttpResponse.json({}, { status: 401 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -1684,6 +1726,9 @@ describe('Snap API Tests', () => {
         ...[
           http.get(`${process.env.USERS_SERVICE_URL}/users/TestUser1`, () => {
             return HttpResponse.json({}, { status: 404 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -1695,7 +1740,7 @@ describe('Snap API Tests', () => {
         });
       expect(response.status).toBe(404);
       expect(response.body).toEqual({
-        detail: 'The username with ID test was not found.',
+        detail: 'The username with ID TestUser1 was not found.',
         instance: '/snaps',
         status: 404,
         title: 'username Not Found',
@@ -1718,6 +1763,9 @@ describe('Snap API Tests', () => {
           http.get(`${process.env.USERS_SERVICE_URL}/users/TestUser1`, () => {
             // 500, users service is down
             return HttpResponse.json({}, { status: 500 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -1781,6 +1829,9 @@ describe('Snap API Tests', () => {
                 followed: false
               }
             });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -2080,6 +2131,9 @@ describe('Snap API Tests', () => {
                 followed: false
               }
             });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -2145,6 +2199,9 @@ describe('Snap API Tests', () => {
                 followed: false
               }
             });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -2211,6 +2268,9 @@ describe('Snap API Tests', () => {
                 followed: false
               }
             });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -2374,6 +2434,9 @@ describe('Snap API Tests', () => {
                 followed: false
               }
             });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -2414,6 +2477,9 @@ describe('Snap API Tests', () => {
                 followed: false
               }
             });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -2454,6 +2520,9 @@ describe('Snap API Tests', () => {
                 followed: true
               }
             });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -2494,6 +2563,9 @@ describe('Snap API Tests', () => {
                 followed: false
               }
             });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -2506,52 +2578,6 @@ describe('Snap API Tests', () => {
       expect(response.status).toBe(200);
       expect(response.body.data.content).toEqual('Hello! Doing a #Test 1');
       expect(response.body.data.likesCount).toEqual(0);
-    });
-
-    it('should return entities if withEntities is true', async () => {
-      const createdTwit = await TwitSnap.create({
-        user: {
-          userId: 255,
-          name: 'Test User 1',
-          username: 'testuser1'
-        },
-        content: 'Hello! Doing a #Test 1',
-        entities: {
-          hashtags: [{ text: '#Test' }]
-        }
-      });
-
-      const response = await request(app)
-        .get(`/snaps/${createdTwit.id}`)
-        .query({ withEntities: true })
-        .set({
-          Authorization: `Bearer ${auth}`
-        });
-      expect(response.status).toBe(200);
-      expect(response.body.data.entities.hashtags[0].text).toEqual('#Test');
-    });
-
-    it('should not return entities if withEntities is false', async () => {
-      const createdTwit = await TwitSnap.create({
-        user: {
-          userId: 255,
-          name: 'Test User 1',
-          username: 'testuser1'
-        },
-        content: 'Hello! Doing a #Test 1',
-        entities: {
-          hashtags: [{ text: '#Test' }]
-        }
-      });
-
-      const response = await request(app)
-        .get(`/snaps/${createdTwit.id}`)
-        .query({ withEntities: false })
-        .set({
-          Authorization: `Bearer ${auth}`
-        });
-      expect(response.status).toBe(200);
-      expect(response.body.data.entities).toBeUndefined();
     });
 
     it('should pass the error received by the service on which it depends (case 400)', async () => {
@@ -2568,6 +2594,9 @@ describe('Snap API Tests', () => {
         ...[
           http.get(`${process.env.USERS_SERVICE_URL}/users/TestUser1`, () => {
             return HttpResponse.json({ field: 'username', detail: user.username }, { status: 400 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -2602,6 +2631,9 @@ describe('Snap API Tests', () => {
         ...[
           http.get(`${process.env.USERS_SERVICE_URL}/users/TestUser1`, () => {
             return HttpResponse.json({}, { status: 401 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -2635,6 +2667,9 @@ describe('Snap API Tests', () => {
         ...[
           http.get(`${process.env.USERS_SERVICE_URL}/users/TestUser1`, () => {
             return HttpResponse.json({}, { status: 404 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -2646,7 +2681,7 @@ describe('Snap API Tests', () => {
         });
       expect(response.status).toBe(404);
       expect(response.body).toEqual({
-        detail: 'The username with ID test was not found.',
+        detail: 'The username with ID TestUser1 was not found.',
         instance: `/snaps/${createdTwit.id}`,
         status: 404,
         title: 'username Not Found',
@@ -2669,6 +2704,9 @@ describe('Snap API Tests', () => {
           http.get(`${process.env.USERS_SERVICE_URL}/users/TestUser1`, () => {
             // 500, users service is down
             return HttpResponse.json({}, { status: 500 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -2730,6 +2768,9 @@ describe('Snap API Tests', () => {
       server.resetHandlers(
         ...[
           http.get(`${process.env.FEED_ALGORITHM_URL}/`, () => {
+            return HttpResponse.json({}, { status: 200 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
             return HttpResponse.json({}, { status: 200 });
           })
         ]
@@ -2800,6 +2841,9 @@ describe('Snap API Tests', () => {
         ...[
           http.post(`${process.env.FEED_ALGORITHM_URL}/`, () => {
             return HttpResponse.json({}, { status: 401 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -2837,6 +2881,9 @@ describe('Snap API Tests', () => {
           http.post(`${process.env.FEED_ALGORITHM_URL}/`, () => {
             // 500, users service is down
             return HttpResponse.json({}, { status: 500 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -2883,6 +2930,9 @@ describe('Snap API Tests', () => {
         ...[
           http.get(`${process.env.FEED_ALGORITHM_URL}/`, () => {
             return HttpResponse.json({}, { status: 200 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+            return HttpResponse.json({}, { status: 200 });
           })
         ]
       );
@@ -2925,6 +2975,9 @@ describe('Snap API Tests', () => {
       server.resetHandlers(
         ...[
           http.get(`${process.env.FEED_ALGORITHM_URL}/`, () => {
+            return HttpResponse.json({}, { status: 200 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
             return HttpResponse.json({}, { status: 200 });
           })
         ]
@@ -2974,6 +3027,9 @@ describe('Snap API Tests', () => {
       server.resetHandlers(
         ...[
           http.get(`${process.env.FEED_ALGORITHM_URL}/`, () => {
+            return HttpResponse.json({}, { status: 200 });
+          }),
+          http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
             return HttpResponse.json({}, { status: 200 });
           })
         ]

@@ -5,6 +5,7 @@ export interface TwitUser {
   isPrivate?: boolean;
   following?: boolean; // Auth user is following the requested user?
   followed?: boolean; // Auth user is followed by the requested user?
+  expoToken?: string;
   //profileImageUrl: string;
   //verified: boolean;
 }
@@ -15,12 +16,12 @@ export type RankRequest = {
 };
 
 export type TrendingTopicsRequest = {
-  limit : number;
+  limit: number;
 };
 
 export type TrendingTopics = {
-  data : string[];
-}
+  data: string[];
+};
 
 export type SnapRank = {
   ranking: {
@@ -62,7 +63,7 @@ export type SnapResponse = {
   user: TwitUser;
   content: string;
   createdAt: string;
-  privacy: string;
+  privacy?: string;
   likesCount?: number;
   userLiked?: boolean;
   userRetwitted?: boolean;
@@ -112,7 +113,7 @@ export interface TwitSnap {
 
 export interface Entities {
   hashtags: Hashtag[];
-  //userMentions: UserMention[];
+  userMentions: UserMention[];
   //urls: URL[];
 }
 
@@ -126,9 +127,7 @@ export interface URL {
 }
 
 export interface UserMention {
-  id: number;
   username: string;
-  indices: number[];
 }
 
 export interface User {

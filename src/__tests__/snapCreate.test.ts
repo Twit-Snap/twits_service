@@ -1,14 +1,22 @@
+import { http, HttpResponse } from 'msw';
+import { setupServer } from 'msw/node';
 import request from 'supertest';
 import app from '../app';
 import { JWTService } from '../service/jwtService';
 import { UUID } from '../utils/uuid';
 
-const auth = new JWTService().sign({
-  type: 'user',
+const user = {
   email: 'test@test.com',
   userId: 1,
   username: 'test'
+};
+
+const auth = new JWTService().sign({
+  type: 'user',
+  ...user
 });
+
+const server = setupServer();
 
 // Mock UUID
 jest.mock('../utils/uuid', () => ({
@@ -31,6 +39,18 @@ jest.mock('../repositories/models/Snap', () => {
 describe('Snap API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    server.listen({ onUnhandledRequest: 'bypass' });
+    server.resetHandlers(
+      ...[
+        http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+          return HttpResponse.json({}, { status: 200 });
+        })
+      ]
+    );
+  });
+
+  afterAll(() => {
+    server.close();
   });
 
   describe('POST /snaps', () => {

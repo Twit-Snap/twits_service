@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import { http, HttpResponse } from 'msw';
+import { setupServer } from 'msw/node';
 import request from 'supertest';
 import app from '../app';
 import Like from '../repositories/models/Like';
@@ -15,6 +17,8 @@ const unsignedAuth: JwtCustomPayload = {
 };
 
 const auth = new JWTService().sign(unsignedAuth);
+
+const server = setupServer();
 
 describe('Snap API Tests', () => {
   var twit1ID: string | undefined = undefined;
@@ -56,10 +60,19 @@ describe('Snap API Tests', () => {
     await TwitSnap.deleteMany({});
     await Like.deleteMany({});
     await mongoose.connection.close();
+    server.close();
   });
 
   beforeEach(async () => {
     await Like.deleteMany({});
+    server.listen({ onUnhandledRequest: 'bypass' });
+    server.resetHandlers(
+      ...[
+        http.get(`${process.env.USERS_SERVICE_URL}/users/${unsignedAuth.username}`, () => {
+          return HttpResponse.json({}, { status: 200 });
+        })
+      ]
+    );
   });
 
   describe('POST /likes', () => {
