@@ -15,12 +15,12 @@ export type RankRequest = {
 };
 
 export type TrendingTopicsRequest = {
-  limit : number;
+  limit: number;
 };
 
 export type TrendingTopics = {
-  data : string[];
-}
+  data: string[];
+};
 
 export type SnapRank = {
   ranking: {
@@ -112,7 +112,7 @@ export interface TwitSnap {
 
 export interface Entities {
   hashtags: Hashtag[];
-  //userMentions: UserMention[];
+  userMentions: UserMention[];
   //urls: URL[];
 }
 
@@ -126,9 +126,7 @@ export interface URL {
 }
 
 export interface UserMention {
-  id: number;
   username: string;
-  indices: number[];
 }
 
 export interface User {
