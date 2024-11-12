@@ -30,7 +30,7 @@ const TwitSnapSchema: Schema = new Schema(
       name: { type: String, required: true },
       username: { type: String, required: true }
     },
-    privacy: { type: String, required: true },
+    privacy: { type: String, default: 'Everyone' },
     entities: {
       hashtags: [{ text: { type: String } }],
       userMentions: [{ username: { type: String } }]

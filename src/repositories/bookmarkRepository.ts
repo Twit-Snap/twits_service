@@ -60,7 +60,8 @@ export class BookmarkRepository implements IBookmarkRepository {
         user: twit.user,
         content: twit.content,
         createdAt: twit.createdAt,
-        privacy: twit.privacy
+        privacy: twit.privacy,
+        entities: twit.entities
       };
     });
 

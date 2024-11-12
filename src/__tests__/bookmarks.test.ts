@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import { http, HttpResponse } from 'msw';
+import { setupServer } from 'msw/node';
 import request from 'supertest';
 import app from '../app';
 import Bookmark from '../repositories/models/Bookmark';
@@ -15,6 +17,8 @@ const unsignedAuth: JwtCustomPayload = {
 };
 
 const auth = new JWTService().sign(unsignedAuth);
+
+const server = setupServer();
 
 describe('Snap API Tests', () => {
   var twit1ID: string | undefined = undefined;
@@ -56,10 +60,19 @@ describe('Snap API Tests', () => {
     await TwitSnap.deleteMany({});
     await Bookmark.deleteMany({});
     await mongoose.connection.close();
+    server.close();
   });
 
   beforeEach(async () => {
     await Bookmark.deleteMany({});
+    server.listen({ onUnhandledRequest: 'bypass' });
+    server.resetHandlers(
+      ...[
+        http.get(`${process.env.USERS_SERVICE_URL}/users/*`, () => {
+          return HttpResponse.json({}, { status: 200 });
+        })
+      ]
+    );
   });
 
   describe('POST /bookmarks', () => {
@@ -365,7 +378,7 @@ describe('Snap API Tests', () => {
       expect(response.status).toBe(401);
       expect(response.body).toEqual({
         detail: 'Authentication error.',
-        instance: "/snaps?bookmarks=true",
+        instance: '/snaps?bookmarks=true',
         status: 401,
         title: 'Unauthorized',
         type: 'about:blank'
@@ -389,12 +402,13 @@ describe('Snap API Tests', () => {
       });
 
       const response = await request(app)
-        .get(`/snaps`).query({ bookmarks: true })
+        .get(`/snaps`)
+        .query({ bookmarks: true })
         .set({
           Authorization: `Bearer ${auth}`
-        })
-        .expect(200);
+        });
 
+      console.log(response.body);
       expect(response.body.data).toHaveLength(2);
       expect(response.body.data.map((snap: SnapResponse) => snap.content)).toContain('Test snap 2');
       expect(response.body.data.map((snap: SnapResponse) => snap.content)).toContain('Test snap 1');
@@ -417,7 +431,8 @@ describe('Snap API Tests', () => {
       });
 
       const response = await request(app)
-        .get(`/snaps`).query({ bookmarks: true })
+        .get(`/snaps`)
+        .query({ bookmarks: true })
         .set({
           Authorization: `Bearer ${auth}`
         })

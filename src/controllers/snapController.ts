@@ -341,40 +341,39 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
 
-    let snaps: SnapResponse[] = [];
-
-    if (params.rank && !params.byFollowed) {
-      params.limit = params.limit ? Math.floor(params.limit / 4) : 5;
-      const sample_snaps = await new SnapService().getSnapSample(user.userId);
-      let sample_snaps_request: RankRequest = {
-        data: sample_snaps.data,
-        limit: params.limit ? params.limit * 3 : 15
-      };
-      const rank_result = await axios.post(
-        `${process.env.FEED_ALGORITHM_URL}/rank`,
-        sample_snaps_request
-      );
-      rank_result.data.ranking.data = await Promise.all(
-        rank_result.data.ranking.data.map(
-          async (snap: SnapResponse) => await new SnapService().getSnapById(snap.id, params)
-        )
-      );
-      console.log(
-        'Fetched from the algo the following Tweets for user: ',
-        user.username,
-        ' --> ',
-        rank_result.data.ranking.data
-      );
-      snaps.push(...rank_result.data.ranking.data);
-      params.excludeTwits = rank_result.data.ranking.data.map((twit: SnapResponse) => twit.id);
-    }
-
     const twitController = new TwitController();
+    let snaps: SnapResponse[] = [];
 
     if (params.bookmarks) {
       const bookmarkedSnaps = await new BookmarkService().getBookmarksByUser(user.userId);
       snaps.push(...bookmarkedSnaps);
     } else {
+      if (params.rank && !params.byFollowed) {
+        params.limit = params.limit ? Math.floor(params.limit / 4) : 5;
+        const sample_snaps = await new SnapService().getSnapSample(user.userId);
+        let sample_snaps_request: RankRequest = {
+          data: sample_snaps.data,
+          limit: params.limit ? params.limit * 3 : 15
+        };
+        const rank_result = await axios.post(
+          `${process.env.FEED_ALGORITHM_URL}/rank`,
+          sample_snaps_request
+        );
+        rank_result.data.ranking.data = await Promise.all(
+          rank_result.data.ranking.data.map(
+            async (snap: SnapResponse) => await new SnapService().getSnapById(snap.id, params)
+          )
+        );
+        console.log(
+          'Fetched from the algo the following Tweets for user: ',
+          user.username,
+          ' --> ',
+          rank_result.data.ranking.data
+        );
+        snaps.push(...rank_result.data.ranking.data);
+        params.excludeTwits = rank_result.data.ranking.data.map((twit: SnapResponse) => twit.id);
+      }
+
       if (params.byFollowed) {
         params.followedIds = await twitController.getFollowedIds(user);
       }
@@ -382,11 +381,11 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       new TwitController().validateCreatedAt(params.createdAt);
 
       const result: SnapResponse[] = await new SnapService().getAllSnaps(params);
-      snaps.push(...result);
-    }
 
-    //Filter out duplicates returned by either of the two methods
-    snaps = params.rank ? removeDuplicates(snaps) : snaps;
+      snaps.push(...result);
+      //Filter out duplicates returned by either of the two methods
+      snaps = params.rank ? removeDuplicates(snaps) : snaps;
+    }
 
     //Add following / followed states
     snaps = user.type === 'user' ? await twitController.addFollowState(user, snaps) : snaps;

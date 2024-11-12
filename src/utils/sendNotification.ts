@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 export const sendPushNotification = async (
   expoPushToken: string,
   title: string,

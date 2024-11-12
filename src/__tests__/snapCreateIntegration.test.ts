@@ -4,6 +4,7 @@ import request from 'supertest';
 import app from '../app';
 import TwitSnap from '../repositories/models/Snap';
 import { JWTService } from '../service/jwtService';
+import { http, HttpResponse } from 'msw';
 
 const user = {
   email: 'test@test.com',
@@ -35,7 +36,13 @@ describe('Snap API Tests', () => {
   beforeEach(async () => {
     await TwitSnap.deleteMany({});
     server.listen({ onUnhandledRequest: 'bypass' });
-    server.resetHandlers();
+    server.resetHandlers(
+      ...[
+        http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+          return HttpResponse.json({}, { status: 200 });
+        })
+      ]
+    );
   });
 
   describe('POST /snaps', () => {
