@@ -1852,7 +1852,7 @@ describe('Snap API Tests', () => {
     it('should return all retwits if the only item in type param is retwit', async () => {
       const first = await TwitSnap.create({
         user: {
-          userId: 1,
+          userId: user.userId,
           name: 'Test User 1',
           username: user.username
         },
@@ -1861,7 +1861,7 @@ describe('Snap API Tests', () => {
       });
       await TwitSnap.create({
         user: {
-          userId: 2,
+          userId: user.userId,
           name: 'Test User 2',
           username: user.username
         },
@@ -1871,7 +1871,7 @@ describe('Snap API Tests', () => {
       });
       await TwitSnap.create({
         user: {
-          userId: 3,
+          userId: user.userId,
           name: 'Test User 3',
           username: user.username
         },
@@ -1940,7 +1940,7 @@ describe('Snap API Tests', () => {
     it('should return all comment and retwits if type param is comment and retwit', async () => {
       const first = await TwitSnap.create({
         user: {
-          userId: 1,
+          userId: user.userId,
           name: 'Test User 1',
           username: user.username
         },
@@ -1949,7 +1949,7 @@ describe('Snap API Tests', () => {
       });
       await TwitSnap.create({
         user: {
-          userId: 2,
+          userId: user.userId,
           name: 'Test User 2',
           username: user.username
         },
@@ -1959,7 +1959,7 @@ describe('Snap API Tests', () => {
       });
       await TwitSnap.create({
         user: {
-          userId: 3,
+          userId: user.userId,
           name: 'Test User 3',
           username: user.username
         },
@@ -2040,7 +2040,7 @@ describe('Snap API Tests', () => {
     it('should return all original and retwits if type param is original and retwit', async () => {
       const first = await TwitSnap.create({
         user: {
-          userId: 1,
+          userId: user.userId,
           name: 'Test User 1',
           username: user.username
         },
@@ -2049,7 +2049,7 @@ describe('Snap API Tests', () => {
       });
       await TwitSnap.create({
         user: {
-          userId: 2,
+          userId: user.userId,
           name: 'Test User 2',
           username: user.username
         },
@@ -2059,7 +2059,7 @@ describe('Snap API Tests', () => {
       });
       await TwitSnap.create({
         user: {
-          userId: 3,
+          userId: user.userId,
           name: 'Test User 3',
           username: user.username
         },
