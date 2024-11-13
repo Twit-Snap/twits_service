@@ -5,7 +5,7 @@ export interface TwitUser {
   isPrivate?: boolean;
   following?: boolean; // Auth user is following the requested user?
   followed?: boolean; // Auth user is followed by the requested user?
-  //profileImageUrl: string;
+  profilePicture?: string;
   //verified: boolean;
 }
 
@@ -62,7 +62,7 @@ export type SnapResponse = {
   user: TwitUser;
   content: string;
   createdAt: string;
-  privacy: string;
+  privacy?: string;
   likesCount?: number;
   userLiked?: boolean;
   userRetwitted?: boolean;

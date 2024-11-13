@@ -213,8 +213,9 @@ export class TwitController implements ITwitController {
   }
 
   async createTwitMetrics(username: string, type: string) {
+    console.log('enter a crear una metrica');
     if(type === 'original') {
-      await new MetricController().createLikeMetric(username);
+      await new MetricController().createTwitMetric(username);
     }else if (type === 'retwit') {
       await new MetricController().createRetwitMetric(username);
     }else if(type === 'comment') {
@@ -258,6 +259,7 @@ export const createSnap = async (
     const privacy: string = req.body.privacy || 'Everyone';
 
     const controller = new TwitController();
+    console.log('creando un nuevo twit');
 
     content = controller.validateTwitType(type, content, parent);
 
@@ -268,10 +270,11 @@ export const createSnap = async (
       type: type,
       parent: parent,
       user: user,
-      privacy: req.body.privacy
+      privacy: privacy
     };
 
     const savedSnap: SnapResponse = await new SnapService().createSnap(snapBody);
+    console.log('creado el twit',savedSnap);
     await controller.createTwitMetrics(user.username, type);
 
     res.status(201).json({ data: savedSnap });

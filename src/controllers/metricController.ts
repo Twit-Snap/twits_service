@@ -7,7 +7,7 @@ export class MetricController{
 
   private async createMetric(username: string, type: string, errorMessage: string) {
     await axios
-      .post(`${process.env.METRIC_SERVICE_URl}/metrics`, {
+      .post(`${process.env.METRIC_SERVICE_URL}/metrics`, {
         type: type,
         createdAt: new Date(),
         username: username,
