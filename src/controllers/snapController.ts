@@ -6,6 +6,7 @@ import { SnapService } from '../service/snapService';
 import { ITwitController } from '../types/controllerTypes';
 import {
   AuthenticationError,
+  BlockedError,
   NotFoundError,
   ServiceUnavailable,
   ValidationError
@@ -25,6 +26,8 @@ import {
 import removeDuplicates from '../utils/removeDups/removeDups';
 import { removePrivateSnaps } from '../utils/removePrivateSnaps/removePrivateSnaps';
 import { sendPushNotification } from '../utils/sendNotification';
+
+var currentTrendingTopics: string[] = [];
 
 export class TwitController implements ITwitController {
   validateContent(content: string | undefined): string {
@@ -233,7 +236,7 @@ export class TwitController implements ITwitController {
 
     return { mentions: filtered.map(user => ({ username: user.username })), users: filtered };
   }
-
+  /* istanbul ignore next */
   async notifyMentions(users: TwitUser[], twit: SnapResponse): Promise<void> {
     users.forEach(user => {
       if (!user.followed) {
@@ -246,8 +249,47 @@ export class TwitController implements ITwitController {
 
       sendPushNotification(user.expoToken, `${twit.user.username} mention you!`, 'Check it out!', {
         params: { id: twit.id },
-        type: 'twit-mention'
+        type: 'twit'
       });
+    });
+  }
+  /* istanbul ignore next */
+  async checkTrending(snap: SnapResponse, authUser: JwtUserPayload) {
+    const lowerCaseContent = snap.content.toLowerCase();
+
+    console.log(currentTrendingTopics);
+
+    Object.keys(currentTrendingTopics).forEach(async trending => {
+      if (lowerCaseContent.includes(trending)) {
+        await axios
+          .post(
+            `${process.env.USERS_SERVICE_URL}/users/notifications`,
+            {
+              title: `@${snap.user.username} posted a trending twit!`,
+              body: snap.content,
+              data: {
+                params: { id: snap.id },
+                type: 'twit',
+                senderId: snap.user.userId
+              }
+            },
+            {
+              headers: { Authorization: `Bearer ${new JWTService().sign(authUser)}` }
+            }
+          )
+          .catch(error => {
+            switch (error.status) {
+              case 400:
+                throw new ValidationError(error.response.data.field, error.response.data.detail);
+              case 401:
+                throw new AuthenticationError();
+              case 403:
+                throw new BlockedError();
+              case 500:
+                throw new ServiceUnavailable();
+            }
+          });
+      }
     });
   }
 }
@@ -309,6 +351,10 @@ export const createSnap = async (
       snapBody,
       filteredMentions.mentions
     );
+
+    if (savedSnap.type === 'original') {
+      controller.checkTrending(savedSnap, authUser);
+    }
 
     controller.notifyMentions(filteredMentions.users, savedSnap);
 
@@ -489,11 +535,26 @@ export const editSnapById = async (
 
 export const getTrendingTopics = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const trendingTopics = await axios.post(`${process.env.FEED_ALGORITHM_URL}/trending`, {
-      limit: 5
-    });
-    console.log('Fetched trending topics: ', trendingTopics.data.trends.data);
-    res.status(200).json({ data: trendingTopics.data.trends.data });
+    const trendingTopics = await axios
+      .post(`${process.env.FEED_ALGORITHM_URL}/trending`, {
+        limit: 5
+      })
+      .then(({ data }) => data)
+      .catch(error => {
+        console.error(error.data);
+        switch (error.status) {
+          case 500:
+            throw new ServiceUnavailable();
+        }
+      });
+
+    currentTrendingTopics = trendingTopics.trends.data.reduce((acc: object, t: object) => ({
+      ...acc,
+      ...t
+    }));
+
+    console.log('Fetched trending topics: ', trendingTopics.trends.data);
+    res.status(200).json({ data: trendingTopics.trends.data });
   } catch (error) {
     next(error);
   }
