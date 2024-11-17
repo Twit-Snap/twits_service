@@ -26,6 +26,8 @@ import removeDuplicates from '../utils/removeDups/removeDups';
 import { removePrivateSnaps } from '../utils/removePrivateSnaps/removePrivateSnaps';
 import { sendPushNotification } from '../utils/sendNotification';
 
+var currentTrendingTopics: string[] = [];
+
 export class TwitController implements ITwitController {
   validateContent(content: string | undefined): string {
     if (!content) {
@@ -501,6 +503,14 @@ export const getTrendingTopics = async (req: Request, res: Response, next: NextF
             throw new ServiceUnavailable();
         }
       });
+
+    currentTrendingTopics = trendingTopics.trends.data.reduce((acc: object, t: object) => ({
+      ...acc,
+      ...t
+    }));
+
+    console.log('Fetched trending topics: ', trendingTopics.trends.data);
+    res.status(200).json({ data: trendingTopics.trends.data });
   } catch (error) {
     next(error);
   }
