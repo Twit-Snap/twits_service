@@ -6,6 +6,7 @@ import { SnapService } from '../service/snapService';
 import { ITwitController } from '../types/controllerTypes';
 import {
   AuthenticationError,
+  BlockedError,
   NotFoundError,
   ServiceUnavailable,
   ValidationError
@@ -235,7 +236,7 @@ export class TwitController implements ITwitController {
 
     return { mentions: filtered.map(user => ({ username: user.username })), users: filtered };
   }
-
+  /* istanbul ignore next */
   async notifyMentions(users: TwitUser[], twit: SnapResponse): Promise<void> {
     users.forEach(user => {
       if (!user.followed) {
@@ -248,8 +249,47 @@ export class TwitController implements ITwitController {
 
       sendPushNotification(user.expoToken, `${twit.user.username} mention you!`, 'Check it out!', {
         params: { id: twit.id },
-        type: 'twit-mention'
+        type: 'twit'
       });
+    });
+  }
+  /* istanbul ignore next */
+  async checkTrending(snap: SnapResponse, authUser: JwtUserPayload) {
+    const lowerCaseContent = snap.content.toLowerCase();
+
+    console.log(currentTrendingTopics);
+
+    Object.keys(currentTrendingTopics).forEach(async trending => {
+      if (lowerCaseContent.includes(trending)) {
+        await axios
+          .post(
+            `${process.env.USERS_SERVICE_URL}/users/notifications`,
+            {
+              title: `@${snap.user.username} posted a trending twit!`,
+              body: snap.content,
+              data: {
+                params: { id: snap.id },
+                type: 'twit',
+                senderId: snap.user.userId
+              }
+            },
+            {
+              headers: { Authorization: `Bearer ${new JWTService().sign(authUser)}` }
+            }
+          )
+          .catch(error => {
+            switch (error.status) {
+              case 400:
+                throw new ValidationError(error.response.data.field, error.response.data.detail);
+              case 401:
+                throw new AuthenticationError();
+              case 403:
+                throw new BlockedError();
+              case 500:
+                throw new ServiceUnavailable();
+            }
+          });
+      }
     });
   }
 }
@@ -311,6 +351,10 @@ export const createSnap = async (
       snapBody,
       filteredMentions.mentions
     );
+
+    if (savedSnap.type === 'original') {
+      controller.checkTrending(savedSnap, authUser);
+    }
 
     controller.notifyMentions(filteredMentions.users, savedSnap);
 
