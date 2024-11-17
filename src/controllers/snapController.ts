@@ -489,11 +489,18 @@ export const editSnapById = async (
 
 export const getTrendingTopics = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const trendingTopics = await axios.post(`${process.env.FEED_ALGORITHM_URL}/trending`, {
-      limit: 5
-    });
-    console.log('Fetched trending topics: ', trendingTopics.data.trends.data);
-    res.status(200).json({ data: trendingTopics.data.trends.data });
+    const trendingTopics = await axios
+      .post(`${process.env.FEED_ALGORITHM_URL}/trending`, {
+        limit: 5
+      })
+      .then(({ data }) => data)
+      .catch(error => {
+        console.error(error.data);
+        switch (error.status) {
+          case 500:
+            throw new ServiceUnavailable();
+        }
+      });
   } catch (error) {
     next(error);
   }
