@@ -44,7 +44,8 @@ export class SnapRepository implements ISnapRepository {
       privacy: savedSnap.privacy,
       parent: savedSnap.parent,
       type: savedSnap.type,
-      entities: savedSnap.entities
+      entities: savedSnap.entities,
+      isBlocked: savedSnap.isBlocked
     };
   }
 
@@ -115,7 +116,8 @@ export class SnapRepository implements ISnapRepository {
       privacy: snap.privacy,
       parent: snap.parent,
       type: snap.type,
-      entities: snap.entities
+      entities: snap.entities,
+      isBlocked: snap.isBlocked
     }));
   }
 
@@ -206,7 +208,8 @@ export class SnapRepository implements ISnapRepository {
       privacy: snap.privacy,
       parent: snap.parent,
       type: snap.type,
-      entities: snap.entities
+      entities: snap.entities,
+      isBlocked: snap.isBlocked
     };
 
     // if (params?.withEntities) {
@@ -342,7 +345,8 @@ export class SnapRepository implements ISnapRepository {
       content: snap.content,
       createdAt: snap.createdAt,
       privacy: snap.privacy,
-      entities: snap.entities
+      entities: snap.entities,
+      isBlocked: snap.isBlocked
     };
   }
 }

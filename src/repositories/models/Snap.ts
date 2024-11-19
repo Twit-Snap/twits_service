@@ -17,6 +17,7 @@ export interface ISnapModel extends Document {
   };
   content: string;
   type: string;
+  isBlocked: boolean;
 }
 
 const TwitSnapSchema: Schema = new Schema(
@@ -34,7 +35,8 @@ const TwitSnapSchema: Schema = new Schema(
     entities: {
       hashtags: [{ text: { type: String } }],
       userMentions: [{ username: { type: String } }]
-    }
+    },
+    isBlocked: { type: Boolean, default: false }
   },
   { timestamps: true }
 );
