@@ -434,6 +434,10 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       snaps = params.rank ? removeDuplicates(snaps) : snaps;
     }
 
+    snaps = snaps.filter(({ type, isBlocked, parent }) =>
+      type === 'retwit' ? !(parent as unknown as SnapResponse).isBlocked : !isBlocked
+    );
+
     //Add following / followed states
     snaps = user.type === 'user' ? await twitController.addFollowState(user, snaps) : snaps;
     const resultInteractions = await new SnapService().addInteractions(user.userId, snaps);
@@ -463,6 +467,11 @@ export const getSnapById = async (
     const user = (req as any).user;
 
     let snap: SnapResponse = await new SnapService().getSnapById(id, params);
+
+    if (snap.isBlocked) {
+      throw new NotFoundError('twit', id);
+    }
+
     snap =
       user.type === 'user' ? (await new TwitController().addFollowState(user, [snap]))[0] : snap;
 
@@ -528,7 +537,7 @@ export const editSnapById = async (
       content: edited_content,
       isBlocked: req.body.isBlocked
     };
-    
+
     const savedSnap = await new SnapService().editSnapById(
       id,
       modifiable,
