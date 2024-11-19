@@ -15,6 +15,7 @@ import { JwtUserPayload } from '../types/jwt';
 import {
   GetAllParams,
   GetByIdParams,
+  ModifiableSnapBody,
   RankRequest,
   SnapBody,
   SnapResponse,
@@ -433,6 +434,10 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       snaps = params.rank ? removeDuplicates(snaps) : snaps;
     }
 
+    snaps = snaps.filter(({ type, isBlocked, parent }) =>
+      type === 'retwit' ? !(parent as unknown as SnapResponse).isBlocked : !isBlocked
+    );
+
     //Add following / followed states
     snaps = user.type === 'user' ? await twitController.addFollowState(user, snaps) : snaps;
     const resultInteractions = await new SnapService().addInteractions(user.userId, snaps);
@@ -462,6 +467,11 @@ export const getSnapById = async (
     const user = (req as any).user;
 
     let snap: SnapResponse = await new SnapService().getSnapById(id, params);
+
+    if (snap.isBlocked) {
+      throw new NotFoundError('twit', id);
+    }
+
     snap =
       user.type === 'user' ? (await new TwitController().addFollowState(user, [snap]))[0] : snap;
 
@@ -507,27 +517,37 @@ export const editSnapById = async (
   try {
     const { id } = req.params;
     let edited_content: string | undefined = req.body.content;
-
-    const controller = new TwitController();
-
-    edited_content = controller.validateContent(edited_content);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const authUser = (req as any).user;
 
-    let userMentions = new SnapService().extractMentions(edited_content);
-    const filteredMentions = await controller.validateMentions(userMentions, authUser);
+    const controller = new TwitController();
+
+    let filteredMentions: {
+      mentions: UserMention[];
+      users: TwitUser[];
+    } = { mentions: [], users: [] };
+
+    if (edited_content) {
+      edited_content = controller.validateContent(edited_content);
+      let userMentions = new SnapService().extractMentions(edited_content);
+      filteredMentions = await controller.validateMentions(userMentions, authUser);
+    }
+
+    const modifiable: ModifiableSnapBody = {
+      content: edited_content,
+      isBlocked: req.body.isBlocked
+    };
 
     const savedSnap = await new SnapService().editSnapById(
       id,
-      edited_content,
+      modifiable,
       filteredMentions.mentions
     );
 
     controller.notifyMentions(filteredMentions.users, savedSnap);
 
     await controller.loadSnapsToFeedAlgorithm();
-
-    res.status(204).send();
+    res.status(200).json({ data: savedSnap });
   } catch (error) {
     next(error);
   }

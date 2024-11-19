@@ -6,6 +6,7 @@ import {
   GetAllParams,
   GetByIdParams,
   Hashtag,
+  ModifiableSnapBody,
   RankRequest,
   SnapBody,
   SnapRankSample,
@@ -144,14 +145,17 @@ export class SnapService implements ISnapService {
 
   async editSnapById(
     twitId: string,
-    content: string,
+    modifiable: ModifiableSnapBody,
     userMentions: UserMention[]
   ): Promise<SnapResponse> {
-    const entities: Entities = {
-      hashtags: this.extractHashTags(content),
-      userMentions
-    };
-    const snap: SnapResponse = await new SnapRepository().editById(twitId, content, entities);
+    if (modifiable.content) {
+      modifiable.entities = {
+        hashtags: this.extractHashTags(modifiable.content),
+        userMentions
+      };
+    }
+
+    const snap: SnapResponse = await new SnapRepository().editById(twitId, modifiable);
     return snap;
   }
 }
