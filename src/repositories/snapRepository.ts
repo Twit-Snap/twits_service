@@ -296,7 +296,7 @@ export class SnapRepository implements ISnapRepository {
   async loadSnapsToFeedAlgorithm(): Promise<RankRequest> {
     // Loads all snaps to feed algorithm
     return {
-      data: (await TwitSnap.find({}).exec()).map((snap: ISnapModel) => ({
+      data: (await TwitSnap.find({isBlocked: false}).exec()).map((snap: ISnapModel) => ({
         id: snap._id,
         content: snap.content
       })),
