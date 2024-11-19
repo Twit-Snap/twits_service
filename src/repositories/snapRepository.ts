@@ -1,9 +1,9 @@
 import { RootFilterQuery } from 'mongoose';
 import { NotFoundError, ValidationError } from '../types/customErrors';
 import {
-  Entities,
   GetAllParams,
   GetByIdParams,
+  ModifiableSnapBody,
   RankRequest,
   SnapBody,
   SnapRankSample,
@@ -326,19 +326,18 @@ export class SnapRepository implements ISnapRepository {
     return { data: sample };
   }
 
-  async editById(id: string, edited_content: string, entities: Entities): Promise<SnapResponse> {
+  async editById(id: string, modifiable: ModifiableSnapBody): Promise<SnapResponse> {
     if (!UUID.isValid(id)) {
       throw new ValidationError('id', 'Invalid UUID');
     }
 
+    await TwitSnap.updateOne({ _id: id }, { $set: modifiable });
     const snap = await TwitSnap.findById(id);
+
     if (!snap) {
       throw new NotFoundError('Snap', id);
     }
 
-    snap.content = edited_content;
-    snap.entities = entities;
-    await snap.save();
     return {
       id: snap._id,
       user: snap.user,

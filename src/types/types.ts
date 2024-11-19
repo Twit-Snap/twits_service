@@ -74,6 +74,7 @@ export type SnapResponse = {
   entities?: Entities;
   parent?: TwitSnap | string | null;
   type?: string;
+  isBlocked?: boolean;
 };
 
 export type LikeResponse = {
@@ -88,6 +89,12 @@ export type BookmarkResponse = {
   bookmarkedAt: string;
 };
 
+export type ModifiableSnapBody = {
+  content?: string;
+  isBlocked?: boolean;
+  entities?: Entities;
+};
+
 export type SnapBody = {
   content: string;
   user: TwitUser;
@@ -95,6 +102,7 @@ export type SnapBody = {
   parent: string;
   entities?: Entities;
   privacy: string;
+  isBlocked?: boolean;
 };
 
 export interface TwitSnap {

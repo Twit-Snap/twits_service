@@ -15,6 +15,7 @@ import { JwtUserPayload } from '../types/jwt';
 import {
   GetAllParams,
   GetByIdParams,
+  ModifiableSnapBody,
   RankRequest,
   SnapBody,
   SnapResponse,
@@ -507,27 +508,37 @@ export const editSnapById = async (
   try {
     const { id } = req.params;
     let edited_content: string | undefined = req.body.content;
-
-    const controller = new TwitController();
-
-    edited_content = controller.validateContent(edited_content);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const authUser = (req as any).user;
 
-    let userMentions = new SnapService().extractMentions(edited_content);
-    const filteredMentions = await controller.validateMentions(userMentions, authUser);
+    const controller = new TwitController();
 
+    let filteredMentions: {
+      mentions: UserMention[];
+      users: TwitUser[];
+    } = { mentions: [], users: [] };
+
+    if (edited_content) {
+      edited_content = controller.validateContent(edited_content);
+      let userMentions = new SnapService().extractMentions(edited_content);
+      filteredMentions = await controller.validateMentions(userMentions, authUser);
+    }
+
+    const modifiable: ModifiableSnapBody = {
+      content: edited_content,
+      isBlocked: req.body.isBlocked
+    };
+    
     const savedSnap = await new SnapService().editSnapById(
       id,
-      edited_content,
+      modifiable,
       filteredMentions.mentions
     );
 
     controller.notifyMentions(filteredMentions.users, savedSnap);
 
     await controller.loadSnapsToFeedAlgorithm();
-
-    res.status(204).send();
+    res.status(200).json({ data: savedSnap });
   } catch (error) {
     next(error);
   }
