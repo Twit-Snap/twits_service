@@ -1,9 +1,9 @@
 import { RootFilterQuery } from 'mongoose';
 import { NotFoundError, ValidationError } from '../types/customErrors';
 import {
-  Entities,
   GetAllParams,
   GetByIdParams,
+  ModifiableSnapBody,
   RankRequest,
   SnapBody,
   SnapRankSample,
@@ -43,7 +43,9 @@ export class SnapRepository implements ISnapRepository {
       createdAt: savedSnap.createdAt,
       privacy: savedSnap.privacy,
       parent: savedSnap.parent,
-      type: savedSnap.type
+      type: savedSnap.type,
+      entities: savedSnap.entities,
+      isBlocked: savedSnap.isBlocked
     };
   }
 
@@ -113,7 +115,9 @@ export class SnapRepository implements ISnapRepository {
       createdAt: snap.createdAt,
       privacy: snap.privacy,
       parent: snap.parent,
-      type: snap.type
+      type: snap.type,
+      entities: snap.entities,
+      isBlocked: snap.isBlocked
     }));
   }
 
@@ -203,12 +207,14 @@ export class SnapRepository implements ISnapRepository {
       createdAt: snap.createdAt,
       privacy: snap.privacy,
       parent: snap.parent,
-      type: snap.type
+      type: snap.type,
+      entities: snap.entities,
+      isBlocked: snap.isBlocked
     };
 
-    if (params?.withEntities) {
-      response.entities = snap.entities;
-    }
+    // if (params?.withEntities) {
+    //   response.entities = snap.entities;
+    // }
     return response;
   }
 
@@ -290,7 +296,7 @@ export class SnapRepository implements ISnapRepository {
   async loadSnapsToFeedAlgorithm(): Promise<RankRequest> {
     // Loads all snaps to feed algorithm
     return {
-      data: (await TwitSnap.find({}).exec()).map((snap: ISnapModel) => ({
+      data: (await TwitSnap.find({isBlocked: false}).exec()).map((snap: ISnapModel) => ({
         id: snap._id,
         content: snap.content
       })),
@@ -320,25 +326,26 @@ export class SnapRepository implements ISnapRepository {
     return { data: sample };
   }
 
-  async editById(id: string, edited_content: string, entities: Entities): Promise<SnapResponse> {
+  async editById(id: string, modifiable: ModifiableSnapBody): Promise<SnapResponse> {
     if (!UUID.isValid(id)) {
       throw new ValidationError('id', 'Invalid UUID');
     }
 
+    await TwitSnap.updateOne({ _id: id }, { $set: modifiable });
     const snap = await TwitSnap.findById(id);
+
     if (!snap) {
       throw new NotFoundError('Snap', id);
     }
 
-    snap.content = edited_content;
-    snap.entities = entities;
-    await snap.save();
     return {
       id: snap._id,
       user: snap.user,
       content: snap.content,
       createdAt: snap.createdAt,
-      privacy: snap.privacy
+      privacy: snap.privacy,
+      entities: snap.entities,
+      isBlocked: snap.isBlocked
     };
   }
 }

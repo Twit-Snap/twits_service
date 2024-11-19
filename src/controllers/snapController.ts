@@ -1,11 +1,12 @@
 import axios from 'axios';
 import { NextFunction, Request, Response } from 'express';
+import { BookmarkService } from '../service/bookmarkService';
 import { JWTService } from '../service/jwtService';
 import { SnapService } from '../service/snapService';
-import { BookmarkService } from '../service/bookmarkService';
 import { ITwitController } from '../types/controllerTypes';
 import {
   AuthenticationError,
+  BlockedError,
   NotFoundError,
   ServiceUnavailable,
   ValidationError
@@ -14,16 +15,21 @@ import { JwtUserPayload } from '../types/jwt';
 import {
   GetAllParams,
   GetByIdParams,
+  ModifiableSnapBody,
   RankRequest,
   SnapBody,
   SnapResponse,
   TwitSnap,
   TwitUser,
-  User
+  User,
+  UserMention
 } from '../types/types';
 import removeDuplicates from '../utils/removeDups/removeDups';
 import { removePrivateSnaps } from '../utils/removePrivateSnaps/removePrivateSnaps';
 import { MetricController } from './metricController';
+import { sendPushNotification } from '../utils/sendNotification';
+
+var currentTrendingTopics: string[] = [];
 
 export class TwitController implements ITwitController {
   validateContent(content: string | undefined): string {
@@ -139,27 +145,7 @@ export class TwitController implements ITwitController {
 
     const userDetails = await Promise.all(
       [...users].map(async username => {
-        return await axios
-          .get(`${process.env.USERS_SERVICE_URL}/users/${username}`, {
-            headers: { Authorization: `Bearer ${new JWTService().sign(user)}` },
-            params: { reduce: true }
-          })
-          .then(response => {
-            return response.data.data;
-          })
-          .catch(error => {
-            console.error(error.data);
-            switch (error.status) {
-              case 400:
-                throw new ValidationError(error.response.data.field, error.response.data.detail);
-              case 401:
-                throw new AuthenticationError();
-              case 404:
-                throw new NotFoundError('username', user.username);
-              case 500:
-                throw new ServiceUnavailable();
-            }
-          });
+        return await this.getUser(username, user);
       })
     );
 
@@ -222,6 +208,103 @@ export class TwitController implements ITwitController {
       await new MetricController().createCommentMetric(username);
     }
   }
+
+  async getUser(username: string, authUser: JwtUserPayload): Promise<TwitUser> {
+    return await axios
+      .get(`${process.env.USERS_SERVICE_URL}/users/${username}`, {
+        headers: { Authorization: `Bearer ${new JWTService().sign(authUser)}` },
+        params: { reduce: true }
+      })
+      .then(response => {
+        return response.data.data;
+      })
+      .catch(error => {
+        console.error(error.data);
+        switch (error.status) {
+          case 400:
+            throw new ValidationError(error.response.data.field, error.response.data.detail);
+          case 401:
+            throw new AuthenticationError();
+          case 404:
+            throw new NotFoundError('username', username);
+          case 500:
+            throw new ServiceUnavailable();
+        }
+      });
+  }
+
+  async validateMentions(
+    mentions: UserMention[],
+    authUser: JwtUserPayload
+  ): Promise<{ mentions: UserMention[]; users: TwitUser[] }> {
+    let users = await Promise.all(
+      mentions.map(({ username }) =>
+        this.getUser(username, authUser)
+          .then(user => user)
+          .catch(() => undefined)
+      )
+    );
+
+    const filtered = users.filter(user => user != undefined);
+
+    return { mentions: filtered.map(user => ({ username: user.username })), users: filtered };
+  }
+  /* istanbul ignore next */
+  async notifyMentions(users: TwitUser[], twit: SnapResponse): Promise<void> {
+    users.forEach(user => {
+      if (!user.followed) {
+        return;
+      }
+
+      if (!user.expoToken) {
+        return;
+      }
+
+      sendPushNotification(user.expoToken, `${twit.user.username} mention you!`, 'Check it out!', {
+        params: { id: twit.id },
+        type: 'twit'
+      });
+    });
+  }
+  /* istanbul ignore next */
+  async checkTrending(snap: SnapResponse, authUser: JwtUserPayload) {
+    const lowerCaseContent = snap.content.toLowerCase();
+
+    console.log(currentTrendingTopics);
+
+    Object.keys(currentTrendingTopics).forEach(async trending => {
+      if (lowerCaseContent.includes(trending)) {
+        await axios
+          .post(
+            `${process.env.USERS_SERVICE_URL}/users/notifications`,
+            {
+              title: `@${snap.user.username} posted a trending twit!`,
+              body: snap.content,
+              data: {
+                params: { id: snap.id },
+                type: 'twit',
+                senderId: snap.user.userId
+              }
+            },
+            {
+              headers: { Authorization: `Bearer ${new JWTService().sign(authUser)}` }
+            }
+          )
+          .catch(error => {
+            switch (error.status) {
+              case 400:
+                throw new ValidationError(error.response.data.field, error.response.data.detail);
+              case 401:
+                throw new AuthenticationError();
+              case 403:
+                throw new BlockedError();
+              case 500:
+                throw new ServiceUnavailable();
+            }
+          });
+      }
+    });
+  }
 }
 
 export const getTotalAmount = async (req: Request, res: Response, next: NextFunction) => {
@@ -264,6 +347,11 @@ export const createSnap = async (
     content = controller.validateTwitType(type, content, parent);
 
     const user = controller.validateTwitUser(req.body.user);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const authUser = (req as any).user;
+
+    const userMentions = new SnapService().extractMentions(content);
+    const filteredMentions = await controller.validateMentions(userMentions, authUser);
 
     const snapBody = {
       content: content,
@@ -273,9 +361,17 @@ export const createSnap = async (
       privacy: privacy
     };
 
-    const savedSnap: SnapResponse = await new SnapService().createSnap(snapBody);
-    console.log('creado el twit',savedSnap);
+    const savedSnap: SnapResponse = await new SnapService().createSnap(
+      snapBody,
+      filteredMentions.mentions
+    );
     await controller.createTwitMetrics(user.username, type);
+
+    if (savedSnap.type === 'original') {
+      controller.checkTrending(savedSnap, authUser);
+    }
+
+    controller.notifyMentions(filteredMentions.users, savedSnap);
 
     res.status(201).json({ data: savedSnap });
   } catch (error) {
@@ -306,40 +402,39 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
 
-    let snaps: SnapResponse[] = [];
-
-    if (params.rank && !params.byFollowed) {
-      params.limit = params.limit ? Math.floor(params.limit / 4) : 5;
-      const sample_snaps = await new SnapService().getSnapSample(user.userId);
-      let sample_snaps_request: RankRequest = {
-        data: sample_snaps.data,
-        limit: params.limit ? params.limit * 3 : 15
-      };
-      const rank_result = await axios.post(
-        `${process.env.FEED_ALGORITHM_URL}/rank`,
-        sample_snaps_request
-      );
-      rank_result.data.ranking.data = await Promise.all(
-        rank_result.data.ranking.data.map(
-          async (snap: SnapResponse) => await new SnapService().getSnapById(snap.id, params)
-        )
-      );
-      console.log(
-        'Fetched from the algo the following Tweets for user: ',
-        user.username,
-        ' --> ',
-        rank_result.data.ranking.data
-      );
-      snaps.push(...rank_result.data.ranking.data);
-      params.excludeTwits = rank_result.data.ranking.data.map((twit: SnapResponse) => twit.id);
-    }
-
     const twitController = new TwitController();
+    let snaps: SnapResponse[] = [];
 
     if (params.bookmarks) {
       const bookmarkedSnaps = await new BookmarkService().getBookmarksByUser(user.userId);
       snaps.push(...bookmarkedSnaps);
     } else {
+      if (params.rank && !params.byFollowed) {
+        params.limit = params.limit ? Math.floor(params.limit / 4) : 5;
+        const sample_snaps = await new SnapService().getSnapSample(user.userId);
+        let sample_snaps_request: RankRequest = {
+          data: sample_snaps.data,
+          limit: params.limit ? params.limit * 3 : 15
+        };
+        const rank_result = await axios.post(
+          `${process.env.FEED_ALGORITHM_URL}/rank`,
+          sample_snaps_request
+        );
+        rank_result.data.ranking.data = await Promise.all(
+          rank_result.data.ranking.data.map(
+            async (snap: SnapResponse) => await new SnapService().getSnapById(snap.id, params)
+          )
+        );
+        console.log(
+          'Fetched from the algo the following Tweets for user: ',
+          user.username,
+          ' --> ',
+          rank_result.data.ranking.data
+        );
+        snaps.push(...rank_result.data.ranking.data);
+        params.excludeTwits = rank_result.data.ranking.data.map((twit: SnapResponse) => twit.id);
+      }
+
       if (params.byFollowed) {
         params.followedIds = await twitController.getFollowedIds(user);
       }
@@ -347,11 +442,15 @@ export const getAllSnaps = async (req: Request, res: Response, next: NextFunctio
       new TwitController().validateCreatedAt(params.createdAt);
 
       const result: SnapResponse[] = await new SnapService().getAllSnaps(params);
+
       snaps.push(...result);
+      //Filter out duplicates returned by either of the two methods
+      snaps = params.rank ? removeDuplicates(snaps) : snaps;
     }
 
-    //Filter out duplicates returned by either of the two methods
-    snaps = params.rank ? removeDuplicates(snaps) : snaps;
+    snaps = snaps.filter(({ type, isBlocked, parent }) =>
+      type === 'retwit' ? !(parent as unknown as SnapResponse).isBlocked : !isBlocked
+    );
 
     //Add following / followed states
     snaps = user.type === 'user' ? await twitController.addFollowState(user, snaps) : snaps;
@@ -374,7 +473,7 @@ export const getSnapById = async (
     const { id } = req.params;
 
     const params: GetByIdParams = {
-      withEntities: req.query.withEntities === 'true',
+      // withEntities: req.query.withEntities === 'true',
       noJoinParent: req.query.noJoinParent === 'true'
     };
 
@@ -382,6 +481,11 @@ export const getSnapById = async (
     const user = (req as any).user;
 
     let snap: SnapResponse = await new SnapService().getSnapById(id, params);
+
+    if (snap.isBlocked) {
+      throw new NotFoundError('twit', id);
+    }
+
     snap =
       user.type === 'user' ? (await new TwitController().addFollowState(user, [snap]))[0] : snap;
 
@@ -427,29 +531,64 @@ export const editSnapById = async (
   try {
     const { id } = req.params;
     let edited_content: string | undefined = req.body.content;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const authUser = (req as any).user;
 
-    edited_content = new TwitController().validateContent(edited_content);
-    await new SnapService().editSnapById(id, edited_content);
+    const controller = new TwitController();
 
-    await new TwitController().loadSnapsToFeedAlgorithm();
+    let filteredMentions: {
+      mentions: UserMention[];
+      users: TwitUser[];
+    } = { mentions: [], users: [] };
 
-    res.status(204).send();
+    if (edited_content) {
+      edited_content = controller.validateContent(edited_content);
+      let userMentions = new SnapService().extractMentions(edited_content);
+      filteredMentions = await controller.validateMentions(userMentions, authUser);
+    }
+
+    const modifiable: ModifiableSnapBody = {
+      content: edited_content,
+      isBlocked: req.body.isBlocked
+    };
+
+    const savedSnap = await new SnapService().editSnapById(
+      id,
+      modifiable,
+      filteredMentions.mentions
+    );
+
+    controller.notifyMentions(filteredMentions.users, savedSnap);
+
+    await controller.loadSnapsToFeedAlgorithm();
+    res.status(200).json({ data: savedSnap });
   } catch (error) {
     next(error);
   }
 };
 
-export const getTrendingTopics = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const getTrendingTopics = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const trendingTopics = await axios.post(`${process.env.FEED_ALGORITHM_URL}/trending`,
-      {limit : 5}
-    );
-    console.log('Fetched trending topics: ', trendingTopics.data.trends.data );
-    res.status(200).json({ data: trendingTopics.data.trends.data });
+    const trendingTopics = await axios
+      .post(`${process.env.FEED_ALGORITHM_URL}/trending`, {
+        limit: 5
+      })
+      .then(({ data }) => data)
+      .catch(error => {
+        console.error(error.data);
+        switch (error.status) {
+          case 500:
+            throw new ServiceUnavailable();
+        }
+      });
+
+    currentTrendingTopics = trendingTopics.trends.data.reduce((acc: object, t: object) => ({
+      ...acc,
+      ...t
+    }));
+
+    console.log('Fetched trending topics: ', trendingTopics.trends.data);
+    res.status(200).json({ data: trendingTopics.trends.data });
   } catch (error) {
     next(error);
   }

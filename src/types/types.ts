@@ -6,6 +6,8 @@ export interface TwitUser {
   following?: boolean; // Auth user is following the requested user?
   followed?: boolean; // Auth user is followed by the requested user?
   profilePicture?: string;
+  expoToken?: string;
+  //profileImageUrl: string;
   //verified: boolean;
 }
 
@@ -15,12 +17,12 @@ export type RankRequest = {
 };
 
 export type TrendingTopicsRequest = {
-  limit : number;
+  limit: number;
 };
 
 export type TrendingTopics = {
-  data : string[];
-}
+  data: string[];
+};
 
 export type SnapRank = {
   ranking: {
@@ -73,6 +75,7 @@ export type SnapResponse = {
   entities?: Entities;
   parent?: TwitSnap | string | null;
   type?: string;
+  isBlocked?: boolean;
 };
 
 export type LikeResponse = {
@@ -87,6 +90,12 @@ export type BookmarkResponse = {
   bookmarkedAt: string;
 };
 
+export type ModifiableSnapBody = {
+  content?: string;
+  isBlocked?: boolean;
+  entities?: Entities;
+};
+
 export type SnapBody = {
   content: string;
   user: TwitUser;
@@ -94,6 +103,7 @@ export type SnapBody = {
   parent: string;
   entities?: Entities;
   privacy: string;
+  isBlocked?: boolean;
 };
 
 export interface TwitSnap {
@@ -112,7 +122,7 @@ export interface TwitSnap {
 
 export interface Entities {
   hashtags: Hashtag[];
-  //userMentions: UserMention[];
+  userMentions: UserMention[];
   //urls: URL[];
 }
 
@@ -126,9 +136,7 @@ export interface URL {
 }
 
 export interface UserMention {
-  id: number;
   username: string;
-  indices: number[];
 }
 
 export interface User {

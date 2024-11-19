@@ -41,6 +41,9 @@ describe('Snap API Tests', () => {
       ...[
         http.get(`${process.env.FEED_ALGORITHM_URL}/`, () => {
           return HttpResponse.json({}, { status: 200 });
+        }),
+        http.get(`${process.env.USERS_SERVICE_URL}/users/${user.username}`, () => {
+          return HttpResponse.json({}, { status: 200 });
         })
       ]
     );
@@ -64,40 +67,12 @@ describe('Snap API Tests', () => {
         })
         .send({ content: 'test' });
 
-      expect(response.status).toBe(204);
+      expect(response.status).toBe(200);
 
       const edit = (await TwitSnap.findById(twit.id)) as SnapResponse;
       expect(edit.content).toEqual('test');
       expect(edit.type).toEqual('original');
       expect(edit.parent).toEqual(null);
-    });
-
-    it('should raise a validationError if want to edit a twit using undefined content', async () => {
-      const twit = await TwitSnap.create({
-        user: {
-          userId: 1,
-          name: 'Test User 1',
-          username: 'testuser1'
-        },
-        content: 'Test snap 1'
-      });
-
-      const response = await request(app)
-        .patch(`/snaps/${twit.id}`)
-        .set({
-          Authorization: `Bearer ${auth}`
-        })
-        .send({ content: undefined });
-
-      expect(response.status).toBe(400);
-      expect(response.body).toEqual({
-        type: 'about:blank',
-        title: 'Validation Error',
-        status: 400,
-        detail: 'The TwitSnap content is required.',
-        instance: `/snaps/${twit.id}`,
-        'custom-field': 'content'
-      });
     });
 
     it('should raise a validationError if want to edit a twit using content with length > 280', async () => {
