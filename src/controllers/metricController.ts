@@ -27,7 +27,7 @@ export class MetricController{
     await this.createMetric(username, 'retwit', 'Error posting retwit metric');
   }
   async createCommentMetric(username: string) {
-    await this.createMetric(username, 'Comment', 'Error posting comment metric');
+    await this.createMetric(username, 'comment', 'Error posting comment metric');
   }
 
 }

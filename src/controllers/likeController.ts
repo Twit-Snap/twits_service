@@ -4,6 +4,7 @@ import { ILikeController } from '../types/controllerTypes';
 import { ValidationError } from '../types/customErrors';
 import { UUID } from '../utils/uuid';
 import { MetricController } from './metricController';
+import { SnapService } from '../service/snapService';
 
 export class LikeController implements ILikeController {
   validateTwitId(twitId: string | undefined): string {
@@ -44,13 +45,14 @@ export const addLike = async (
 ) => {
   try {
     let twitId: string | undefined = req.body.twitId;
-
     twitId = new LikeController().validateTwitId(twitId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = (req as any).user;
 
     const data = await new LikeService().addLike(user.userId, twitId);
-    await new MetricController().createLikeMetric(user.username);
+
+    const likedTwit = await new SnapService().getSnapById(twitId);
+    await new MetricController().createLikeMetric(likedTwit.user.username);
     res.status(201).json({ data: data });
   } catch (error) {
     next(error);

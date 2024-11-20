@@ -28,6 +28,7 @@ import removeDuplicates from '../utils/removeDups/removeDups';
 import { removePrivateSnaps } from '../utils/removePrivateSnaps/removePrivateSnaps';
 import { MetricController } from './metricController';
 import { sendPushNotification } from '../utils/sendNotification';
+import { timingSafeEqual } from 'node:crypto';
 
 var currentTrendingTopics: string[] = [];
 
@@ -198,16 +199,20 @@ export class TwitController implements ITwitController {
     console.log('Snaps loaded to feed algorithm');
   }
 
-  async createTwitMetrics(username: string, type: string) {
+  async createTwitMetrics(snapBody: SnapResponse, type: string) {
     console.log('enter a crear una metrica');
     if(type === 'original') {
-      await new MetricController().createTwitMetric(username);
+      await new MetricController().createTwitMetric(snapBody.user.username);
     }else if (type === 'retwit') {
-      await new MetricController().createRetwitMetric(username);
+      const likedTwit = await new SnapService().getSnapById(snapBody.parent as string);
+      await new MetricController().createRetwitMetric(likedTwit.user.username);
     }else if(type === 'comment') {
-      await new MetricController().createCommentMetric(username);
+      const likedTwit = await new SnapService().getSnapById(snapBody.parent as string);
+      await new MetricController().createCommentMetric(likedTwit.user.username);
     }
   }
+
+
 
   async getUser(username: string, authUser: JwtUserPayload): Promise<TwitUser> {
     return await axios
@@ -365,7 +370,9 @@ export const createSnap = async (
       snapBody,
       filteredMentions.mentions
     );
-    await controller.createTwitMetrics(user.username, type);
+    console.log(savedSnap)
+
+    await controller.createTwitMetrics(savedSnap, type);
 
     if (savedSnap.type === 'original') {
       controller.checkTrending(savedSnap, authUser);
