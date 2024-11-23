@@ -28,7 +28,6 @@ import removeDuplicates from '../utils/removeDups/removeDups';
 import { removePrivateSnaps } from '../utils/removePrivateSnaps/removePrivateSnaps';
 import { MetricController } from './metricController';
 import { sendPushNotification } from '../utils/sendNotification';
-import { timingSafeEqual } from 'node:crypto';
 
 var currentTrendingTopics: string[] = [];
 
