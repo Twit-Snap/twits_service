@@ -5,6 +5,7 @@ export interface TwitUser {
   isPrivate?: boolean;
   following?: boolean; // Auth user is following the requested user?
   followed?: boolean; // Auth user is followed by the requested user?
+  profilePicture?: string;
   expoToken?: string;
   //profileImageUrl: string;
   //verified: boolean;
