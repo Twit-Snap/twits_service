@@ -26,8 +26,8 @@ import {
 } from '../types/types';
 import removeDuplicates from '../utils/removeDups/removeDups';
 import { removePrivateSnaps } from '../utils/removePrivateSnaps/removePrivateSnaps';
-import { MetricController } from './metricController';
 import { sendPushNotification } from '../utils/sendNotification';
+import { MetricController } from './metricController';
 
 var currentTrendingTopics: string[] = [];
 
@@ -200,18 +200,16 @@ export class TwitController implements ITwitController {
 
   async createTwitMetrics(snapBody: SnapResponse, type: string) {
     console.log('enter a crear una metrica');
-    if(type === 'original') {
+    if (type === 'original') {
       await new MetricController().createTwitMetric(snapBody.user.username);
-    }else if (type === 'retwit') {
+    } else if (type === 'retwit') {
       const likedTwit = await new SnapService().getSnapById(snapBody.parent as string);
       await new MetricController().createRetwitMetric(likedTwit.user.username);
-    }else if(type === 'comment') {
+    } else if (type === 'comment') {
       const likedTwit = await new SnapService().getSnapById(snapBody.parent as string);
       await new MetricController().createCommentMetric(likedTwit.user.username);
     }
   }
-
-
 
   async getUser(username: string, authUser: JwtUserPayload): Promise<TwitUser> {
     return await axios
@@ -369,7 +367,6 @@ export const createSnap = async (
       snapBody,
       filteredMentions.mentions
     );
-    console.log(savedSnap)
 
     await controller.createTwitMetrics(savedSnap, type);
 
