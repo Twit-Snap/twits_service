@@ -49,6 +49,10 @@ export const checkBlockedUser = async (decodedToken: JwtCustomPayload) => {
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (req.path.startsWith('/twitShare')) {
+      return next();
+    }
+
     const authHeader: string | undefined = req.headers['authorization'];
 
     const decoded: JwtCustomPayload = decodeToken(authHeader);
