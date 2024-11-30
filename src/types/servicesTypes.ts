@@ -1,7 +1,16 @@
-import { GetAllParams, GetByIdParams, LikeResponse, BookmarkResponse, SnapBody, SnapResponse, UserMention } from './types';
+import {
+  GetAllParams,
+  GetByIdParams,
+  LikeResponse,
+  BookmarkResponse,
+  SnapBody,
+  SnapResponse,
+  UserMention,
+  Hashtag
+} from './types';
 
 export interface ISnapService {
-  createSnap(snapBody: SnapBody, userMentions: UserMention[]): Promise<SnapResponse>;
+  createSnap(snapBody: SnapBody, userMentions: UserMention[], hashtags: Hashtag[]): Promise<SnapResponse>;
   getAllSnaps(params: GetAllParams): Promise<SnapResponse[]>;
   getSnapById(twitId: string, params?: GetByIdParams): Promise<SnapResponse>;
 }

@@ -199,7 +199,6 @@ export class TwitController implements ITwitController {
   }
 
   async createTwitMetrics(snapBody: SnapResponse, type: string) {
-    console.log('enter a crear una metrica');
     if(type === 'original') {
       await new MetricController().createTwitMetric(snapBody.user.username);
     }else if (type === 'retwit') {
@@ -357,6 +356,9 @@ export const createSnap = async (
     const userMentions = new SnapService().extractMentions(content);
     const filteredMentions = await controller.validateMentions(userMentions, authUser);
 
+    const hashtags = new SnapService().extractHashTags(content);
+
+
     const snapBody = {
       content: content,
       type: type,
@@ -367,17 +369,21 @@ export const createSnap = async (
 
     const savedSnap: SnapResponse = await new SnapService().createSnap(
       snapBody,
-      filteredMentions.mentions
+      filteredMentions.mentions,
+      hashtags
     );
+      await new MetricController().createHashtagMetrics(savedSnap.user.username, hashtags);
+
+
     console.log(savedSnap)
 
     await controller.createTwitMetrics(savedSnap, type);
 
     if (savedSnap.type === 'original') {
-      controller.checkTrending(savedSnap, authUser);
+      await controller.checkTrending(savedSnap, authUser);
     }
 
-    controller.notifyMentions(filteredMentions.users, savedSnap);
+    await controller.notifyMentions(filteredMentions.users, savedSnap);
 
     res.status(201).json({ data: savedSnap });
   } catch (error) {
