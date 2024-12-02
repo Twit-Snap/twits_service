@@ -14,7 +14,7 @@ import {
 import { JwtUserPayload } from '../types/jwt';
 import {
   GetAllParams,
-  GetByIdParams,
+  GetByIdParams, Hashtag,
   ModifiableSnapBody,
   RankRequest,
   SnapBody,
@@ -198,14 +198,18 @@ export class TwitController implements ITwitController {
     console.log('Snaps loaded to feed algorithm');
   }
 
-  async createTwitMetrics(snapBody: SnapResponse, type: string) {
+  async createTwitMetrics(snapBody: SnapResponse, type: string, hashtags: Hashtag[]) {
     if(type === 'original') {
       await new MetricController().createTwitMetric(snapBody.user.username);
+      console.log('creando metricas de hashtags')
+      console.log(hashtags);
+      await new MetricController().createHashtagMetrics(snapBody.user.username, hashtags);
     }else if (type === 'retwit') {
       const likedTwit = await new SnapService().getSnapById(snapBody.parent as string);
       await new MetricController().createRetwitMetric(likedTwit.user.username);
     }else if(type === 'comment') {
       const likedTwit = await new SnapService().getSnapById(snapBody.parent as string);
+      await new MetricController().createHashtagMetrics(snapBody.user.username, hashtags);
       await new MetricController().createCommentMetric(likedTwit.user.username);
     }
   }
@@ -372,12 +376,10 @@ export const createSnap = async (
       filteredMentions.mentions,
       hashtags
     );
-      await new MetricController().createHashtagMetrics(savedSnap.user.username, hashtags);
-
 
     console.log(savedSnap)
 
-    await controller.createTwitMetrics(savedSnap, type);
+    await controller.createTwitMetrics(savedSnap, type, hashtags);
 
     if (savedSnap.type === 'original') {
       await controller.checkTrending(savedSnap, authUser);
