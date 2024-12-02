@@ -14,7 +14,7 @@ import {
 import { JwtUserPayload } from '../types/jwt';
 import {
   GetAllParams,
-  GetByIdParams,
+  GetByIdParams, Hashtag,
   ModifiableSnapBody,
   RankRequest,
   SnapBody,
@@ -198,15 +198,16 @@ export class TwitController implements ITwitController {
     console.log('Snaps loaded to feed algorithm');
   }
 
-  async createTwitMetrics(snapBody: SnapResponse, type: string) {
-    console.log('enter a crear una metrica');
+  async createTwitMetrics(snapBody: SnapResponse, type: string, hashtags: Hashtag[]) {
     if (type === 'original') {
       await new MetricController().createTwitMetric(snapBody.user.username);
+      await new MetricController().createHashtagMetrics(snapBody.user.username, hashtags);
     } else if (type === 'retwit') {
       const likedTwit = await new SnapService().getSnapById(snapBody.parent as string);
       await new MetricController().createRetwitMetric(likedTwit.user.username);
     } else if (type === 'comment') {
       const likedTwit = await new SnapService().getSnapById(snapBody.parent as string);
+      await new MetricController().createHashtagMetrics(snapBody.user.username, hashtags);
       await new MetricController().createCommentMetric(likedTwit.user.username);
     }
   }
@@ -355,6 +356,9 @@ export const createSnap = async (
     const userMentions = new SnapService().extractMentions(content);
     const filteredMentions = await controller.validateMentions(userMentions, authUser);
 
+    const hashtags = new SnapService().extractHashTags(content);
+
+
     const snapBody = {
       content: content,
       type: type,
@@ -365,16 +369,19 @@ export const createSnap = async (
 
     const savedSnap: SnapResponse = await new SnapService().createSnap(
       snapBody,
-      filteredMentions.mentions
+      filteredMentions.mentions,
+      hashtags
     );
 
-    await controller.createTwitMetrics(savedSnap, type);
+    console.log(savedSnap)
+
+    await controller.createTwitMetrics(savedSnap, type, hashtags);
 
     if (savedSnap.type === 'original') {
-      controller.checkTrending(savedSnap, authUser);
+      await controller.checkTrending(savedSnap, authUser);
     }
 
-    controller.notifyMentions(filteredMentions.users, savedSnap);
+    await controller.notifyMentions(filteredMentions.users, savedSnap);
 
     res.status(201).json({ data: savedSnap });
   } catch (error) {

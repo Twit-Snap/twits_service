@@ -17,7 +17,8 @@ import { BookmarkService } from './bookmarkService';
 import { LikeService } from './likeService';
 
 export class SnapService implements ISnapService {
-  private extractHashTags(content: string): Hashtag[] {
+
+  extractHashTags(content: string): Hashtag[] {
     const hashTags = content.match(/#\w+/g);
     return hashTags ? hashTags.map(tag => ({ text: tag })) : [];
   }
@@ -35,11 +36,11 @@ export class SnapService implements ISnapService {
     await this.getSnapById(parent); // repository validation
   }
 
-  async createSnap(snapBody: SnapBody, userMentions: UserMention[]): Promise<SnapResponse> {
+  async createSnap(snapBody: SnapBody, userMentions: UserMention[], hashtags: Hashtag[]): Promise<SnapResponse> {
     await this.validateParent(snapBody.parent);
 
     const entities: Entities = {
-      hashtags: this.extractHashTags(snapBody.content),
+      hashtags,
       userMentions
     };
 
