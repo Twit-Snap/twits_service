@@ -31,7 +31,12 @@ jest.mock('../repositories/models/Snap', () => {
   return jest.fn().mockImplementation(() => ({
     save: jest.fn().mockResolvedValue({
       id: 'mocked-uuid',
-      content: 'Test snap message'
+      content: 'Test snap message',
+      user: {
+        userId: 1,
+        name: 'Test User 1',
+        username: 'testuser1'
+      }
     })
   }));
 });
