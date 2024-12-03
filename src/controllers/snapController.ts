@@ -592,10 +592,12 @@ export const getTrendingTopics = async (req: Request, res: Response, next: NextF
         }
       });
 
-    currentTrendingTopics = trendingTopics.trends.data.reduce((acc: object, t: object) => ({
-      ...acc,
-      ...t
-    }));
+    if (trendingTopics.trends.data.length !== 0) {
+      currentTrendingTopics = trendingTopics.trends.data.reduce((acc: object, t: object) => ({
+        ...acc,
+        ...t
+      }));
+    }
 
     console.log('Fetched trending topics: ', trendingTopics.trends.data);
     res.status(200).json({ data: trendingTopics.trends.data });
