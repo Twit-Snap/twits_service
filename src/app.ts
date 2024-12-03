@@ -10,6 +10,7 @@ import { logMiddleware } from './middleware/logMiddleware';
 import likeRoutes from './routes/likesRoutes';
 import snapRoutes from './routes/snapRoutes';
 import bookmarkRoutes from './routes/bookmarkRoutes';
+import twitRedirectRoutes from './routes/twitRedirectRoutes';
 import logger from './utils/logger';
 
 // Función para inicializar el entorno
@@ -52,6 +53,7 @@ app.use(authMiddleware);
 app.use('/snaps', snapRoutes);
 app.use('/likes', likeRoutes);
 app.use('/bookmarks', bookmarkRoutes);
+app.use('/twitShare', twitRedirectRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
