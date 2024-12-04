@@ -496,8 +496,7 @@ export const getSnapById = async (
       throw new NotFoundError('twit', id);
     }
 
-    snap =
-      user.type === 'user' ? (await new TwitController().addFollowState(user, [snap]))[0] : snap;
+    snap = (await new TwitController().addFollowState(user, [snap]))[0];
 
     const resultInteractions = (await new SnapService().addInteractions(user.userId, [snap]))[0];
 
