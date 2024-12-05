@@ -1,21 +1,25 @@
 import axios from 'axios';
 import { Hashtag } from '../types/types';
 
-
-export class MetricController{
-
+export class MetricController {
   constructor() {}
 
-  private async createMetric(username: string, type: string, errorMessage: string, metrics: Record<string, string | number | boolean | Date>) {
+  private async createMetric(
+    username: string,
+    type: string,
+    errorMessage: string,
+    metrics: Record<string, string | number | boolean | Date>
+  ) {
     await axios
-      .post(`${process.env.METRIC_SERVICE_URL}/metrics`, {
+      .post(`${process.env.METRICS_SERVICE_URL}/metrics`, {
         type: type,
         createdAt: new Date(),
         username: username,
         metrics: metrics
-      }).catch((error) => {
+      })
+      .catch(error => {
         console.error(errorMessage, error);
-    })
+      });
   }
 
   async createTwitMetric(username: string) {
@@ -33,8 +37,9 @@ export class MetricController{
 
   async createHashtagMetrics(username: string, hashtags: Hashtag[]) {
     for (const hashtag of hashtags) {
-      await this.createMetric(username, 'hashtag', 'Error posting hashtag metric', { hashtag: hashtag.text });
+      await this.createMetric(username, 'hashtag', 'Error posting hashtag metric', {
+        hashtag: hashtag.text
+      });
     }
   }
-
 }
